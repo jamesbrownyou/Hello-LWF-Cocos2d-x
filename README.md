@@ -1,3 +1,11 @@
+Hello-LWF-Cocos2d-x
+===================
+
+An example of LWF for C++ with Cocos2d-x renderer.
+
+Go to [the example project's README](https://github.com/splhack/Hello-LWF-Cocos2d-x/tree/master/projects/Hello-LWF-Cocos2d-x).
+
+
 <img src="http://www.cocos2d-x.org/attachments/801/cocos2dx_portrait.png" width=200>
 
 

@@ -4,34 +4,35 @@
 
 template<class T>
 static JSBool dummy_constructor(JSContext *cx, uint32_t argc, jsval *vp) {
-	TypeTest<T> t;
-	T* cobj = new T();
-	cocos2d::Object *_ccobj = dynamic_cast<cocos2d::Object *>(cobj);
-	if (_ccobj) {
-		_ccobj->autorelease();
+    JS::RootedValue initializing(cx);
+    JSBool isNewValid = JS_TRUE;
+    JSObject* global = ScriptingCore::getInstance()->getGlobalObject();
+	isNewValid = JS_GetProperty(cx, global, "initializing", &initializing) && JSVAL_TO_BOOLEAN(initializing);
+	if (isNewValid)
+	{
+		TypeTest<T> t;
+		js_type_class_t *typeClass = nullptr;
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
+		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
+		typeClass = typeMapIter->second;
+		CCASSERT(typeClass, "The value is null.");
+
+		JSObject *_tmp = JS_NewObject(cx, typeClass->jsclass, typeClass->proto, typeClass->parentProto);
+		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(_tmp));
+		return JS_TRUE;
 	}
-	js_type_class_t *typeClass = nullptr;
-	long typeId = t.s_id();
-	auto typeMapIter = _js_global_type_map.find(typeId);
-	CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
-	typeClass = typeMapIter->second;
-	CCASSERT(typeClass, "The value is null.");
 
-	JSObject *_tmp = JS_NewObject(cx, typeClass->jsclass, typeClass->proto, typeClass->parentProto);
-	js_proxy_t *pp = jsb_new_proxy(cobj, _tmp);
-	JS_AddObjectRoot(cx, &pp->obj);
-	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(_tmp));
-
-	return JS_TRUE;
+    JS_ReportError(cx, "Don't use `new cc.XXX`, please use `cc.XXX.create` instead! ");
+    return JS_FALSE;
 }
 
 static JSBool empty_constructor(JSContext *cx, uint32_t argc, jsval *vp) {
 	return JS_FALSE;
 }
 
-
-JSClass  *jsb_Scale9Sprite_class;
-JSObject *jsb_Scale9Sprite_prototype;
+JSClass  *jsb_cocos2d_extension_Scale9Sprite_class;
+JSObject *jsb_cocos2d_extension_Scale9Sprite_prototype;
 
 JSBool js_cocos2dx_extension_Scale9Sprite_resizableSpriteWithCapInsets(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -46,10 +47,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_resizableSpriteWithCapInsets(JSContext
 		ok &= jsval_to_ccrect(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_resizableSpriteWithCapInsets : Error processing arguments");
 		cocos2d::extension::Scale9Sprite* ret = cobj->resizableSpriteWithCapInsets(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -60,89 +61,6 @@ JSBool js_cocos2dx_extension_Scale9Sprite_resizableSpriteWithCapInsets(JSContext
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_resizableSpriteWithCapInsets : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-
-	JSObject *obj = NULL;
-	cocos2d::extension::Scale9Sprite* cobj = NULL;
-	obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName : Invalid Native Object");
-	do {
-		if (argc == 1) {
-			const char* arg0;
-			std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
-			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithSpriteFrameName(arg0);
-			jsval jsret;
-			jsret = BOOLEAN_TO_JSVAL(ret);
-			JS_SET_RVAL(cx, vp, jsret);
-			return JS_TRUE;
-		}
-	} while(0);
-
-	do {
-		if (argc == 2) {
-			const char* arg0;
-			std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
-			if (!ok) { ok = JS_TRUE; break; }
-			cocos2d::Rect arg1;
-			ok &= jsval_to_ccrect(cx, argv[1], &arg1);
-			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithSpriteFrameName(arg0, arg1);
-			jsval jsret;
-			jsret = BOOLEAN_TO_JSVAL(ret);
-			JS_SET_RVAL(cx, vp, jsret);
-			return JS_TRUE;
-		}
-	} while(0);
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName : wrong number of arguments");
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Scale9Sprite_setOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setOpacityModifyRGB : Invalid Native Object");
-	if (argc == 1) {
-		JSBool arg0;
-		ok &= JS_ValueToBoolean(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setOpacityModifyRGB : Error processing arguments");
-		cobj->setOpacityModifyRGB(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setOpacityModifyRGB : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Scale9Sprite_setContentSize(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setContentSize : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Size arg0;
-		ok &= jsval_to_ccsize(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setContentSize : Error processing arguments");
-		cobj->setContentSize(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setContentSize : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_Scale9Sprite_setInsetBottom(JSContext *cx, uint32_t argc, jsval *vp)
@@ -165,41 +83,47 @@ JSBool js_cocos2dx_extension_Scale9Sprite_setInsetBottom(JSContext *cx, uint32_t
 	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setInsetBottom : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_Scale9Sprite_isOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_isOpacityModifyRGB : Invalid Native Object");
-	if (argc == 0) {
-		bool ret = cobj->isOpacityModifyRGB();
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_isOpacityModifyRGB : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Scale9Sprite_setOpacity(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setOpacity : Invalid Native Object");
-	if (argc == 1) {
-		uint16_t arg0;
-		ok &= jsval_to_uint16(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setOpacity : Error processing arguments");
-		cobj->setOpacity(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setOpacity : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JSObject *obj = NULL;
+	cocos2d::extension::Scale9Sprite* cobj = NULL;
+	obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName : Invalid Native Object");
+	do {
+		if (argc == 1) {
+			const char* arg0;
+			std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
+			if (!ok) { ok = JS_TRUE; break; }
+			JSBool ret = cobj->initWithSpriteFrameName(arg0);
+			jsval jsret = JSVAL_NULL;
+			jsret = BOOLEAN_TO_JSVAL(ret);
+			JS_SET_RVAL(cx, vp, jsret);
+			return JS_TRUE;
+		}
+	} while(0);
+
+	do {
+		if (argc == 2) {
+			const char* arg0;
+			std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
+			if (!ok) { ok = JS_TRUE; break; }
+			cocos2d::Rect arg1;
+			ok &= jsval_to_ccrect(cx, argv[1], &arg1);
+			if (!ok) { ok = JS_TRUE; break; }
+			JSBool ret = cobj->initWithSpriteFrameName(arg0, arg1);
+			jsval jsret = JSVAL_NULL;
+			jsret = BOOLEAN_TO_JSVAL(ret);
+			JS_SET_RVAL(cx, vp, jsret);
+			return JS_TRUE;
+		}
+	} while(0);
+
+	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName : wrong number of arguments");
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_Scale9Sprite_setInsetTop(JSContext *cx, uint32_t argc, jsval *vp)
@@ -222,26 +146,6 @@ JSBool js_cocos2dx_extension_Scale9Sprite_setInsetTop(JSContext *cx, uint32_t ar
 	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setInsetTop : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_Scale9Sprite_updateDisplayedOpacity(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_updateDisplayedOpacity : Invalid Native Object");
-	if (argc == 1) {
-		uint16_t arg0;
-		ok &= jsval_to_uint16(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_updateDisplayedOpacity : Error processing arguments");
-		cobj->updateDisplayedOpacity(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_updateDisplayedOpacity : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_Scale9Sprite_init(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -249,8 +153,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_init(JSContext *cx, uint32_t argc, jsv
 	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_init : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->init();
-		jsval jsret;
+		JSBool ret = cobj->init();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -279,23 +183,6 @@ JSBool js_cocos2dx_extension_Scale9Sprite_setPreferredSize(JSContext *cx, uint32
 	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setPreferredSize : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_Scale9Sprite_getOpacity(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getOpacity : Invalid Native Object");
-	if (argc == 0) {
-		unsigned char ret = cobj->getOpacity();
-		jsval jsret;
-		jsret = uint32_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_getOpacity : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_Scale9Sprite_setSpriteFrame(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -321,23 +208,6 @@ JSBool js_cocos2dx_extension_Scale9Sprite_setSpriteFrame(JSContext *cx, uint32_t
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setSpriteFrame : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Scale9Sprite_getColor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getColor : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::Color3B ret = cobj->getColor();
-		jsval jsret;
-		jsret = cccolor3b_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_getColor : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_Scale9Sprite_initWithBatchNode(JSContext *cx, uint32_t argc, jsval *vp)
@@ -369,8 +239,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithBatchNode(JSContext *cx, uint3
 			cocos2d::Rect arg2;
 			ok &= jsval_to_ccrect(cx, argv[2], &arg2);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithBatchNode(arg0, arg1, arg2);
-			jsval jsret;
+			JSBool ret = cobj->initWithBatchNode(arg0, arg1, arg2);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -398,8 +268,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithBatchNode(JSContext *cx, uint3
 			cocos2d::Rect arg3;
 			ok &= jsval_to_ccrect(cx, argv[3], &arg3);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithBatchNode(arg0, arg1, arg2, arg3);
-			jsval jsret;
+			JSBool ret = cobj->initWithBatchNode(arg0, arg1, arg2, arg3);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -416,8 +286,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_getInsetBottom(JSContext *cx, uint32_t
 	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getInsetBottom : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getInsetBottom();
-		jsval jsret;
+		double ret = cobj->getInsetBottom();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -434,7 +304,7 @@ JSBool js_cocos2dx_extension_Scale9Sprite_getCapInsets(JSContext *cx, uint32_t a
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getCapInsets : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Rect ret = cobj->getCapInsets();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccrect_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -468,8 +338,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_updateWithBatchNode(JSContext *cx, uin
 		ok &= JS_ValueToBoolean(cx, argv[2], &arg2);
 		ok &= jsval_to_ccrect(cx, argv[3], &arg3);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_updateWithBatchNode : Error processing arguments");
-		bool ret = cobj->updateWithBatchNode(arg0, arg1, arg2, arg3);
-		jsval jsret;
+		JSBool ret = cobj->updateWithBatchNode(arg0, arg1, arg2, arg3);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -485,8 +355,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_getInsetRight(JSContext *cx, uint32_t 
 	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getInsetRight : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getInsetRight();
-		jsval jsret;
+		double ret = cobj->getInsetRight();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -503,7 +373,7 @@ JSBool js_cocos2dx_extension_Scale9Sprite_getOriginalSize(JSContext *cx, uint32_
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getOriginalSize : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Size ret = cobj->getOriginalSize();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccsize_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -531,8 +401,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithFile(JSContext *cx, uint32_t a
 			cocos2d::Rect arg1;
 			ok &= jsval_to_ccrect(cx, argv[1], &arg1);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithFile(arg0, arg1);
-			jsval jsret;
+			JSBool ret = cobj->initWithFile(arg0, arg1);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -550,8 +420,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithFile(JSContext *cx, uint32_t a
 			cocos2d::Rect arg2;
 			ok &= jsval_to_ccrect(cx, argv[2], &arg2);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithFile(arg0, arg1, arg2);
-			jsval jsret;
+			JSBool ret = cobj->initWithFile(arg0, arg1, arg2);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -566,8 +436,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithFile(JSContext *cx, uint32_t a
 			const char* arg1;
 			std::string arg1_tmp; ok &= jsval_to_std_string(cx, argv[1], &arg1_tmp); arg1 = arg1_tmp.c_str();
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithFile(arg0, arg1);
-			jsval jsret;
+			JSBool ret = cobj->initWithFile(arg0, arg1);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -579,8 +449,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithFile(JSContext *cx, uint32_t a
 			const char* arg0;
 			std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithFile(arg0);
-			jsval jsret;
+			JSBool ret = cobj->initWithFile(arg0);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -590,26 +460,6 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithFile(JSContext *cx, uint32_t a
 	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_initWithFile : wrong number of arguments");
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_Scale9Sprite_setColor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setColor : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Color3B arg0;
-		ok &= jsval_to_cccolor3b(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_setColor : Error processing arguments");
-		cobj->setColor(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_setColor : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_Scale9Sprite_getInsetTop(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -617,8 +467,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_getInsetTop(JSContext *cx, uint32_t ar
 	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getInsetTop : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getInsetTop();
-		jsval jsret;
+		double ret = cobj->getInsetTop();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -670,8 +520,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrame(JSContext *cx, uin
 				JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithSpriteFrame(arg0);
-			jsval jsret;
+			JSBool ret = cobj->initWithSpriteFrame(arg0);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -693,8 +543,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrame(JSContext *cx, uin
 			cocos2d::Rect arg1;
 			ok &= jsval_to_ccrect(cx, argv[1], &arg1);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithSpriteFrame(arg0, arg1);
-			jsval jsret;
+			JSBool ret = cobj->initWithSpriteFrame(arg0, arg1);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -712,7 +562,7 @@ JSBool js_cocos2dx_extension_Scale9Sprite_getPreferredSize(JSContext *cx, uint32
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getPreferredSize : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Size ret = cobj->getPreferredSize();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccsize_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -748,34 +598,14 @@ JSBool js_cocos2dx_extension_Scale9Sprite_getInsetLeft(JSContext *cx, uint32_t a
 	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_getInsetLeft : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getInsetLeft();
-		jsval jsret;
+		double ret = cobj->getInsetLeft();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_getInsetLeft : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Scale9Sprite_updateDisplayedColor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Scale9Sprite* cobj = (cocos2d::extension::Scale9Sprite *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_updateDisplayedColor : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Color3B arg0;
-		ok &= jsval_to_cccolor3b(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Scale9Sprite_updateDisplayedColor : Error processing arguments");
-		cobj->updateDisplayedColor(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Scale9Sprite_updateDisplayedColor : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_Scale9Sprite_setInsetRight(JSContext *cx, uint32_t argc, jsval *vp)
@@ -815,10 +645,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_create(JSContext *cx, uint32_t argc, j
 			ok &= jsval_to_ccrect(cx, argv[2], &arg2);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::create(arg0, arg1, arg2);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -832,10 +662,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_create(JSContext *cx, uint32_t argc, j
 	do {
 		if (argc == 0) {
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::create();
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -855,10 +685,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_create(JSContext *cx, uint32_t argc, j
 			std::string arg1_tmp; ok &= jsval_to_std_string(cx, argv[1], &arg1_tmp); arg1 = arg1_tmp.c_str();
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::create(arg0, arg1);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -878,10 +708,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_create(JSContext *cx, uint32_t argc, j
 			ok &= jsval_to_ccrect(cx, argv[1], &arg1);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::create(arg0, arg1);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -898,10 +728,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_create(JSContext *cx, uint32_t argc, j
 			std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::create(arg0);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -928,10 +758,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_createWithSpriteFrameName(JSContext *c
 			ok &= jsval_to_ccrect(cx, argv[1], &arg1);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::createWithSpriteFrameName(arg0, arg1);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -948,10 +778,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_createWithSpriteFrameName(JSContext *c
 			std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::createWithSpriteFrameName(arg0);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -985,10 +815,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_createWithSpriteFrame(JSContext *cx, u
 			ok &= jsval_to_ccrect(cx, argv[1], &arg1);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::createWithSpriteFrame(arg0, arg1);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -1012,10 +842,10 @@ JSBool js_cocos2dx_extension_Scale9Sprite_createWithSpriteFrame(JSContext *cx, u
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::Scale9Sprite* ret = cocos2d::extension::Scale9Sprite::createWithSpriteFrame(arg0);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -1038,8 +868,8 @@ JSBool js_cocos2dx_extension_Scale9Sprite_constructor(JSContext *cx, uint32_t ar
 		}
 		TypeTest<cocos2d::extension::Scale9Sprite> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -1056,36 +886,24 @@ JSBool js_cocos2dx_extension_Scale9Sprite_constructor(JSContext *cx, uint32_t ar
 }
 
 
+extern JSObject *jsb_cocos2d_Node_prototype;
 
-extern JSObject *jsb_NodeRGBA_prototype;
-
-void js_cocos2dx_extension_Scale9Sprite_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_Scale9Sprite_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (Scale9Sprite)", obj);
 }
 
-static JSBool js_cocos2dx_extension_Scale9Sprite_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::Scale9Sprite *nobj = new cocos2d::extension::Scale9Sprite();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::Scale9Sprite");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_Scale9Sprite(JSContext *cx, JSObject *global) {
-	jsb_Scale9Sprite_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_Scale9Sprite_class->name = "Scale9Sprite";
-	jsb_Scale9Sprite_class->addProperty = JS_PropertyStub;
-	jsb_Scale9Sprite_class->delProperty = JS_DeletePropertyStub;
-	jsb_Scale9Sprite_class->getProperty = JS_PropertyStub;
-	jsb_Scale9Sprite_class->setProperty = JS_StrictPropertyStub;
-	jsb_Scale9Sprite_class->enumerate = JS_EnumerateStub;
-	jsb_Scale9Sprite_class->resolve = JS_ResolveStub;
-	jsb_Scale9Sprite_class->convert = JS_ConvertStub;
-	jsb_Scale9Sprite_class->finalize = js_cocos2dx_extension_Scale9Sprite_finalize;
-	jsb_Scale9Sprite_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_Scale9Sprite_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_Scale9Sprite_class->name = "Scale9Sprite";
+	jsb_cocos2d_extension_Scale9Sprite_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_Scale9Sprite_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_Scale9Sprite_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_Scale9Sprite_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_Scale9Sprite_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_Scale9Sprite_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_Scale9Sprite_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_Scale9Sprite_class->finalize = js_cocos2d_extension_Scale9Sprite_finalize;
+	jsb_cocos2d_extension_Scale9Sprite_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -1093,19 +911,12 @@ void js_register_cocos2dx_extension_Scale9Sprite(JSContext *cx, JSObject *global
 
 	static JSFunctionSpec funcs[] = {
 		JS_FN("resizableSpriteWithCapInsets", js_cocos2dx_extension_Scale9Sprite_resizableSpriteWithCapInsets, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("initWithSpriteFrameName", js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setOpacityModifyRGB", js_cocos2dx_extension_Scale9Sprite_setOpacityModifyRGB, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setContentSize", js_cocos2dx_extension_Scale9Sprite_setContentSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setInsetBottom", js_cocos2dx_extension_Scale9Sprite_setInsetBottom, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("isOpacityModifyRGB", js_cocos2dx_extension_Scale9Sprite_isOpacityModifyRGB, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setOpacity", js_cocos2dx_extension_Scale9Sprite_setOpacity, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("initWithSpriteFrameName", js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setInsetTop", js_cocos2dx_extension_Scale9Sprite_setInsetTop, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("updateDisplayedOpacity", js_cocos2dx_extension_Scale9Sprite_updateDisplayedOpacity, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("init", js_cocos2dx_extension_Scale9Sprite_init, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setPreferredSize", js_cocos2dx_extension_Scale9Sprite_setPreferredSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getOpacity", js_cocos2dx_extension_Scale9Sprite_getOpacity, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setSpriteFrame", js_cocos2dx_extension_Scale9Sprite_setSpriteFrame, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getColor", js_cocos2dx_extension_Scale9Sprite_getColor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("initWithBatchNode", js_cocos2dx_extension_Scale9Sprite_initWithBatchNode, 3, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getInsetBottom", js_cocos2dx_extension_Scale9Sprite_getInsetBottom, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getCapInsets", js_cocos2dx_extension_Scale9Sprite_getCapInsets, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
@@ -1113,16 +924,13 @@ void js_register_cocos2dx_extension_Scale9Sprite(JSContext *cx, JSObject *global
 		JS_FN("getInsetRight", js_cocos2dx_extension_Scale9Sprite_getInsetRight, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getOriginalSize", js_cocos2dx_extension_Scale9Sprite_getOriginalSize, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("initWithFile", js_cocos2dx_extension_Scale9Sprite_initWithFile, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setColor", js_cocos2dx_extension_Scale9Sprite_setColor, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getInsetTop", js_cocos2dx_extension_Scale9Sprite_getInsetTop, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setInsetLeft", js_cocos2dx_extension_Scale9Sprite_setInsetLeft, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("initWithSpriteFrame", js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrame, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getPreferredSize", js_cocos2dx_extension_Scale9Sprite_getPreferredSize, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setCapInsets", js_cocos2dx_extension_Scale9Sprite_setCapInsets, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getInsetLeft", js_cocos2dx_extension_Scale9Sprite_getInsetLeft, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("updateDisplayedColor", js_cocos2dx_extension_Scale9Sprite_updateDisplayedColor, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setInsetRight", js_cocos2dx_extension_Scale9Sprite_setInsetRight, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_Scale9Sprite_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -1133,10 +941,10 @@ void js_register_cocos2dx_extension_Scale9Sprite(JSContext *cx, JSObject *global
 		JS_FS_END
 	};
 
-	jsb_Scale9Sprite_prototype = JS_InitClass(
+	jsb_cocos2d_extension_Scale9Sprite_prototype = JS_InitClass(
 		cx, global,
-		jsb_NodeRGBA_prototype,
-		jsb_Scale9Sprite_class,
+		jsb_cocos2d_Node_prototype,
+		jsb_cocos2d_extension_Scale9Sprite_class,
 		js_cocos2dx_extension_Scale9Sprite_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -1149,20 +957,19 @@ void js_register_cocos2dx_extension_Scale9Sprite(JSContext *cx, JSObject *global
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::Scale9Sprite> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_Scale9Sprite_class;
-		p->proto = jsb_Scale9Sprite_prototype;
-		p->parentProto = jsb_NodeRGBA_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_Scale9Sprite_class;
+		p->proto = jsb_cocos2d_extension_Scale9Sprite_prototype;
+		p->parentProto = jsb_cocos2d_Node_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_Control_class;
-JSObject *jsb_Control_prototype;
+JSClass  *jsb_cocos2d_extension_Control_class;
+JSObject *jsb_cocos2d_extension_Control_prototype;
 
 JSBool js_cocos2dx_extension_Control_setEnabled(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -1192,7 +999,7 @@ JSBool js_cocos2dx_extension_Control_getState(JSContext *cx, uint32_t argc, jsva
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_getState : Invalid Native Object");
 	if (argc == 0) {
 		int ret = (int)cobj->getState();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = int32_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -1248,43 +1055,14 @@ JSBool js_cocos2dx_extension_Control_isEnabled(JSContext *cx, uint32_t argc, jsv
 	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_isEnabled : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isEnabled();
-		jsval jsret;
+		JSBool ret = cobj->isEnabled();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_Control_isEnabled : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Control_isTouchInside(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_isTouchInside : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Touch* arg0;
-		do {
-			if (!argv[0].isObject()) { ok = JS_FALSE; break; }
-			js_proxy_t *proxy;
-			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-			proxy = jsb_get_js_proxy(tmpObj);
-			arg0 = (cocos2d::Touch*)(proxy ? proxy->ptr : NULL);
-			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
-		} while (0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Control_isTouchInside : Error processing arguments");
-		bool ret = cobj->isTouchInside(arg0);
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Control_isTouchInside : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_Control_needsLayout(JSContext *cx, uint32_t argc, jsval *vp)
@@ -1309,8 +1087,8 @@ JSBool js_cocos2dx_extension_Control_hasVisibleParents(JSContext *cx, uint32_t a
 	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_hasVisibleParents : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->hasVisibleParents();
-		jsval jsret;
+		JSBool ret = cobj->hasVisibleParents();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -1326,8 +1104,8 @@ JSBool js_cocos2dx_extension_Control_isSelected(JSContext *cx, uint32_t argc, js
 	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_isSelected : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isSelected();
-		jsval jsret;
+		JSBool ret = cobj->isSelected();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -1336,21 +1114,33 @@ JSBool js_cocos2dx_extension_Control_isSelected(JSContext *cx, uint32_t argc, js
 	JS_ReportError(cx, "js_cocos2dx_extension_Control_isSelected : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_Control_init(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_Control_isTouchInside(JSContext *cx, uint32_t argc, jsval *vp)
 {
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_init : Invalid Native Object");
-	if (argc == 0) {
-		bool ret = cobj->init();
-		jsval jsret;
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_isTouchInside : Invalid Native Object");
+	if (argc == 1) {
+		cocos2d::Touch* arg0;
+		do {
+			if (!argv[0].isObject()) { ok = JS_FALSE; break; }
+			js_proxy_t *proxy;
+			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
+			proxy = jsb_get_js_proxy(tmpObj);
+			arg0 = (cocos2d::Touch*)(proxy ? proxy->ptr : NULL);
+			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
+		} while (0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Control_isTouchInside : Error processing arguments");
+		JSBool ret = cobj->isTouchInside(arg0);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_Control_init : wrong number of arguments: %d, was expecting %d", argc, 0);
+	JS_ReportError(cx, "js_cocos2dx_extension_Control_isTouchInside : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_Control_setHighlighted(JSContext *cx, uint32_t argc, jsval *vp)
@@ -1373,43 +1163,6 @@ JSBool js_cocos2dx_extension_Control_setHighlighted(JSContext *cx, uint32_t argc
 	JS_ReportError(cx, "js_cocos2dx_extension_Control_setHighlighted : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_Control_setOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_setOpacityModifyRGB : Invalid Native Object");
-	if (argc == 1) {
-		JSBool arg0;
-		ok &= JS_ValueToBoolean(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Control_setOpacityModifyRGB : Error processing arguments");
-		cobj->setOpacityModifyRGB(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Control_setOpacityModifyRGB : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_Control_isOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_isOpacityModifyRGB : Invalid Native Object");
-	if (argc == 0) {
-		bool ret = cobj->isOpacityModifyRGB();
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_Control_isOpacityModifyRGB : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_Control_getTouchLocation(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -1430,7 +1183,7 @@ JSBool js_cocos2dx_extension_Control_getTouchLocation(JSContext *cx, uint32_t ar
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_Control_getTouchLocation : Error processing arguments");
 		cocos2d::Point ret = cobj->getTouchLocation(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -1446,8 +1199,8 @@ JSBool js_cocos2dx_extension_Control_isHighlighted(JSContext *cx, uint32_t argc,
 	cocos2d::extension::Control* cobj = (cocos2d::extension::Control *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_Control_isHighlighted : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isHighlighted();
-		jsval jsret;
+		JSBool ret = cobj->isHighlighted();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -1460,10 +1213,10 @@ JSBool js_cocos2dx_extension_Control_create(JSContext *cx, uint32_t argc, jsval 
 {
 	if (argc == 0) {
 		cocos2d::extension::Control* ret = cocos2d::extension::Control::create();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Control>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Control>(cx, (cocos2d::extension::Control*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -1476,64 +1229,25 @@ JSBool js_cocos2dx_extension_Control_create(JSContext *cx, uint32_t argc, jsval 
 	return JS_FALSE;
 }
 
-JSBool js_cocos2dx_extension_Control_constructor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	if (argc == 0) {
-		cocos2d::extension::Control* cobj = new cocos2d::extension::Control();
-		cocos2d::Object *_ccobj = dynamic_cast<cocos2d::Object *>(cobj);
-		if (_ccobj) {
-			_ccobj->autorelease();
-		}
-		TypeTest<cocos2d::extension::Control> t;
-		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
-		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
-		typeClass = typeMapIter->second;
-		CCASSERT(typeClass, "The value is null.");
-		JSObject *obj = JS_NewObject(cx, typeClass->jsclass, typeClass->proto, typeClass->parentProto);
-		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
-		// link the native object with the javascript object
-		js_proxy_t* p = jsb_new_proxy(cobj, obj);
-		JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::Control");
-		return JS_TRUE;
-	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_Control_constructor : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
+extern JSObject *jsb_cocos2d_Layer_prototype;
 
-
-
-extern JSObject *jsb_LayerRGBA_prototype;
-
-void js_cocos2dx_extension_Control_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_Control_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (Control)", obj);
 }
 
-static JSBool js_cocos2dx_extension_Control_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::Control *nobj = new cocos2d::extension::Control();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::Control");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_Control(JSContext *cx, JSObject *global) {
-	jsb_Control_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_Control_class->name = "Control";
-	jsb_Control_class->addProperty = JS_PropertyStub;
-	jsb_Control_class->delProperty = JS_DeletePropertyStub;
-	jsb_Control_class->getProperty = JS_PropertyStub;
-	jsb_Control_class->setProperty = JS_StrictPropertyStub;
-	jsb_Control_class->enumerate = JS_EnumerateStub;
-	jsb_Control_class->resolve = JS_ResolveStub;
-	jsb_Control_class->convert = JS_ConvertStub;
-	jsb_Control_class->finalize = js_cocos2dx_extension_Control_finalize;
-	jsb_Control_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_Control_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_Control_class->name = "Control";
+	jsb_cocos2d_extension_Control_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_Control_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_Control_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_Control_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_Control_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_Control_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_Control_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_Control_class->finalize = js_cocos2d_extension_Control_finalize;
+	jsb_cocos2d_extension_Control_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -1545,17 +1259,13 @@ void js_register_cocos2dx_extension_Control(JSContext *cx, JSObject *global) {
 		JS_FN("sendActionsForControlEvents", js_cocos2dx_extension_Control_sendActionsForControlEvents, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setSelected", js_cocos2dx_extension_Control_setSelected, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isEnabled", js_cocos2dx_extension_Control_isEnabled, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("isTouchInside", js_cocos2dx_extension_Control_isTouchInside, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("needsLayout", js_cocos2dx_extension_Control_needsLayout, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("hasVisibleParents", js_cocos2dx_extension_Control_hasVisibleParents, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isSelected", js_cocos2dx_extension_Control_isSelected, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("init", js_cocos2dx_extension_Control_init, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("isTouchInside", js_cocos2dx_extension_Control_isTouchInside, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setHighlighted", js_cocos2dx_extension_Control_setHighlighted, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setOpacityModifyRGB", js_cocos2dx_extension_Control_setOpacityModifyRGB, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("isOpacityModifyRGB", js_cocos2dx_extension_Control_isOpacityModifyRGB, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTouchLocation", js_cocos2dx_extension_Control_getTouchLocation, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isHighlighted", js_cocos2dx_extension_Control_isHighlighted, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_Control_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -1564,11 +1274,11 @@ void js_register_cocos2dx_extension_Control(JSContext *cx, JSObject *global) {
 		JS_FS_END
 	};
 
-	jsb_Control_prototype = JS_InitClass(
+	jsb_cocos2d_extension_Control_prototype = JS_InitClass(
 		cx, global,
-		jsb_LayerRGBA_prototype,
-		jsb_Control_class,
-		js_cocos2dx_extension_Control_constructor, 0, // constructor
+		jsb_cocos2d_Layer_prototype,
+		jsb_cocos2d_extension_Control_class,
+		dummy_constructor<cocos2d::extension::Control>, 0, // no constructor
 		properties,
 		funcs,
 		NULL, // no static properties
@@ -1580,41 +1290,20 @@ void js_register_cocos2dx_extension_Control(JSContext *cx, JSObject *global) {
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::Control> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_Control_class;
-		p->proto = jsb_Control_prototype;
-		p->parentProto = jsb_LayerRGBA_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_Control_class;
+		p->proto = jsb_cocos2d_extension_Control_prototype;
+		p->parentProto = jsb_cocos2d_Layer_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
+JSClass  *jsb_cocos2d_extension_ControlButton_class;
+JSObject *jsb_cocos2d_extension_ControlButton_prototype;
 
-JSClass  *jsb_ControlButton_class;
-JSObject *jsb_ControlButton_prototype;
-
-JSBool js_cocos2dx_extension_ControlButton_setTitleColorDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleColorDispatchTable : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Dictionary* arg0;
-		ok &= jsval_to_ccdictionary(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleColorDispatchTable : Error processing arguments");
-		cobj->setTitleColorDispatchTable(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setTitleColorDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_ControlButton_isPushed(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -1622,8 +1311,8 @@ JSBool js_cocos2dx_extension_ControlButton_isPushed(JSContext *cx, uint32_t argc
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_isPushed : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isPushed();
-		jsval jsret;
+		JSBool ret = cobj->isPushed();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -1701,23 +1390,6 @@ JSBool js_cocos2dx_extension_ControlButton_setAdjustBackgroundImage(JSContext *c
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setAdjustBackgroundImage : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_getLabelAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getLabelAnchorPoint : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::Point ret = cobj->getLabelAnchorPoint();
-		jsval jsret;
-		jsret = ccpoint_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getLabelAnchorPoint : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_ControlButton_setHighlighted(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -1758,26 +1430,6 @@ JSBool js_cocos2dx_extension_ControlButton_setZoomOnTouchDown(JSContext *cx, uin
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setZoomOnTouchDown : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_setBackgroundSpriteDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setBackgroundSpriteDispatchTable : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Dictionary* arg0;
-		ok &= jsval_to_ccdictionary(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setBackgroundSpriteDispatchTable : Error processing arguments");
-		cobj->setBackgroundSpriteDispatchTable(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setBackgroundSpriteDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_ControlButton_setTitleForState(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -1787,9 +1439,9 @@ JSBool js_cocos2dx_extension_ControlButton_setTitleForState(JSContext *cx, uint3
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleForState : Invalid Native Object");
 	if (argc == 2) {
-		cocos2d::String* arg0;
+		std::string arg0;
 		cocos2d::extension::Control::State arg1;
-		std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = cocos2d::String::create(arg0_tmp);
+		ok &= jsval_to_std_string(cx, argv[0], &arg0);
 		ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleForState : Error processing arguments");
 		cobj->setTitleForState(arg0, arg1);
@@ -1798,23 +1450,6 @@ JSBool js_cocos2dx_extension_ControlButton_setTitleForState(JSContext *cx, uint3
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setTitleForState : wrong number of arguments: %d, was expecting %d", argc, 2);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_getTitleDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleDispatchTable : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::Dictionary* ret = cobj->getTitleDispatchTable();
-		jsval jsret;
-		jsret = ccdictionary_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getTitleDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_setLabelAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp)
@@ -1837,33 +1472,21 @@ JSBool js_cocos2dx_extension_ControlButton_setLabelAnchorPoint(JSContext *cx, ui
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setLabelAnchorPoint : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_initWithBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlButton_getLabelAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp)
 {
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_initWithBackgroundSprite : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::extension::Scale9Sprite* arg0;
-		do {
-			if (!argv[0].isObject()) { ok = JS_FALSE; break; }
-			js_proxy_t *proxy;
-			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-			proxy = jsb_get_js_proxy(tmpObj);
-			arg0 = (cocos2d::extension::Scale9Sprite*)(proxy ? proxy->ptr : NULL);
-			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
-		} while (0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_initWithBackgroundSprite : Error processing arguments");
-		bool ret = cobj->initWithBackgroundSprite(arg0);
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getLabelAnchorPoint : Invalid Native Object");
+	if (argc == 0) {
+		const cocos2d::Point& ret = cobj->getLabelAnchorPoint();
+		jsval jsret = JSVAL_NULL;
+		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_initWithBackgroundSprite : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getLabelAnchorPoint : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_getTitleTTFSizeForState(JSContext *cx, uint32_t argc, jsval *vp)
@@ -1878,71 +1501,14 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleTTFSizeForState(JSContext *cx
 		cocos2d::extension::Control::State arg0;
 		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleTTFSizeForState : Error processing arguments");
-		float ret = cobj->getTitleTTFSizeForState(arg0);
-		jsval jsret;
+		double ret = cobj->getTitleTTFSizeForState(arg0);
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getTitleTTFSizeForState : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_setTitleDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleDispatchTable : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Dictionary* arg0;
-		ok &= jsval_to_ccdictionary(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleDispatchTable : Error processing arguments");
-		cobj->setTitleDispatchTable(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setTitleDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_setOpacity(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setOpacity : Invalid Native Object");
-	if (argc == 1) {
-		uint16_t arg0;
-		ok &= jsval_to_uint16(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setOpacity : Error processing arguments");
-		cobj->setOpacity(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setOpacity : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_init(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_init : Invalid Native Object");
-	if (argc == 0) {
-		bool ret = cobj->init();
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_init : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_setTitleTTFForState(JSContext *cx, uint32_t argc, jsval *vp)
@@ -1954,9 +1520,9 @@ JSBool js_cocos2dx_extension_ControlButton_setTitleTTFForState(JSContext *cx, ui
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleTTFForState : Invalid Native Object");
 	if (argc == 2) {
-		const char* arg0;
+		std::string arg0;
 		cocos2d::extension::Control::State arg1;
-		std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
+		ok &= jsval_to_std_string(cx, argv[0], &arg0);
 		ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleTTFForState : Error processing arguments");
 		cobj->setTitleTTFForState(arg0, arg1);
@@ -2016,21 +1582,24 @@ JSBool js_cocos2dx_extension_ControlButton_setTitleLabel(JSContext *cx, uint32_t
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setTitleLabel : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_getOpacity(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlButton_setPreferredSize(JSContext *cx, uint32_t argc, jsval *vp)
 {
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getOpacity : Invalid Native Object");
-	if (argc == 0) {
-		unsigned char ret = cobj->getOpacity();
-		jsval jsret;
-		jsret = uint32_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setPreferredSize : Invalid Native Object");
+	if (argc == 1) {
+		cocos2d::Size arg0;
+		ok &= jsval_to_ccsize(cx, argv[0], &arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setPreferredSize : Error processing arguments");
+		cobj->setPreferredSize(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getOpacity : wrong number of arguments: %d, was expecting %d", argc, 0);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setPreferredSize : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_getCurrentTitleColor(JSContext *cx, uint32_t argc, jsval *vp)
@@ -2040,31 +1609,14 @@ JSBool js_cocos2dx_extension_ControlButton_getCurrentTitleColor(JSContext *cx, u
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getCurrentTitleColor : Invalid Native Object");
 	if (argc == 0) {
-		cocos2d::Color3B ret = cobj->getCurrentTitleColor();
-		jsval jsret;
+		const cocos2d::Color3B& ret = cobj->getCurrentTitleColor();
+		jsval jsret = JSVAL_NULL;
 		jsret = cccolor3b_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getCurrentTitleColor : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_getTitleColorDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleColorDispatchTable : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::Dictionary* ret = cobj->getTitleColorDispatchTable();
-		jsval jsret;
-		jsret = ccdictionary_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getTitleColorDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_setEnabled(JSContext *cx, uint32_t argc, jsval *vp)
@@ -2087,33 +1639,6 @@ JSBool js_cocos2dx_extension_ControlButton_setEnabled(JSContext *cx, uint32_t ar
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setEnabled : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_setBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setBackgroundSprite : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::extension::Scale9Sprite* arg0;
-		do {
-			if (!argv[0].isObject()) { ok = JS_FALSE; break; }
-			js_proxy_t *proxy;
-			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-			proxy = jsb_get_js_proxy(tmpObj);
-			arg0 = (cocos2d::extension::Scale9Sprite*)(proxy ? proxy->ptr : NULL);
-			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
-		} while (0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setBackgroundSprite : Error processing arguments");
-		cobj->setBackgroundSprite(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setBackgroundSprite : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_ControlButton_getBackgroundSpriteForState(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -2127,10 +1652,10 @@ JSBool js_cocos2dx_extension_ControlButton_getBackgroundSpriteForState(JSContext
 		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getBackgroundSpriteForState : Error processing arguments");
 		cocos2d::extension::Scale9Sprite* ret = cobj->getBackgroundSpriteForState(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -2143,43 +1668,21 @@ JSBool js_cocos2dx_extension_ControlButton_getBackgroundSpriteForState(JSContext
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getBackgroundSpriteForState : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_getColor(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlButton_getHorizontalOrigin(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getColor : Invalid Native Object");
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getHorizontalOrigin : Invalid Native Object");
 	if (argc == 0) {
-		cocos2d::Color3B ret = cobj->getColor();
-		jsval jsret;
-		jsret = cccolor3b_to_jsval(cx, ret);
+		int ret = cobj->getHorizontalOrigin();
+		jsval jsret = JSVAL_NULL;
+		jsret = int32_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getColor : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_setMargins(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setMargins : Invalid Native Object");
-	if (argc == 2) {
-		int arg0;
-		int arg1;
-		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
-		ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setMargins : Error processing arguments");
-		cobj->setMargins(arg0, arg1);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setMargins : wrong number of arguments: %d, was expecting %d", argc, 2);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getHorizontalOrigin : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_needsLayout(JSContext *cx, uint32_t argc, jsval *vp)
@@ -2197,64 +1700,38 @@ JSBool js_cocos2dx_extension_ControlButton_needsLayout(JSContext *cx, uint32_t a
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_needsLayout : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_initWithTitleAndFontNameAndFontSize(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlButton_getCurrentTitle(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_initWithTitleAndFontNameAndFontSize : Invalid Native Object");
-	if (argc == 3) {
-		std::string arg0;
-		const char* arg1;
-		double arg2;
-		ok &= jsval_to_std_string(cx, argv[0], &arg0);
-		std::string arg1_tmp; ok &= jsval_to_std_string(cx, argv[1], &arg1_tmp); arg1 = arg1_tmp.c_str();
-		ok &= JS_ValueToNumber(cx, argv[2], &arg2);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_initWithTitleAndFontNameAndFontSize : Error processing arguments");
-		bool ret = cobj->initWithTitleAndFontNameAndFontSize(arg0, arg1, arg2);
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_initWithTitleAndFontNameAndFontSize : wrong number of arguments: %d, was expecting %d", argc, 3);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_getCurrentTitle(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	JSObject *obj = NULL;
+	cocos2d::extension::ControlButton* cobj = NULL;
+	obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
+	cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getCurrentTitle : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::String* ret = cobj->getCurrentTitle();
-		jsval jsret;
-		jsret = std_string_to_jsval(cx, ret->getCString());
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
+	do {
+		if (argc == 0) {
+			std::string ret = cobj->getCurrentTitle();
+			jsval jsret = JSVAL_NULL;
+			jsret = std_string_to_jsval(cx, ret);
+			JS_SET_RVAL(cx, vp, jsret);
+			return JS_TRUE;
+		}
+	} while(0);
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getCurrentTitle : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_getHorizontalOrigin(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getHorizontalOrigin : Invalid Native Object");
-	if (argc == 0) {
-		int ret = cobj->getHorizontalOrigin();
-		jsval jsret;
-		jsret = int32_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
+	do {
+		if (argc == 0) {
+			const std::string& ret = cobj->getCurrentTitle();
+			jsval jsret = JSVAL_NULL;
+			jsret = std_string_to_jsval(cx, ret);
+			JS_SET_RVAL(cx, vp, jsret);
+			return JS_TRUE;
+		}
+	} while(0);
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getHorizontalOrigin : wrong number of arguments: %d, was expecting %d", argc, 0);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getCurrentTitle : wrong number of arguments");
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_getTitleTTFForState(JSContext *cx, uint32_t argc, jsval *vp)
@@ -2269,9 +1746,9 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleTTFForState(JSContext *cx, ui
 		cocos2d::extension::Control::State arg0;
 		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleTTFForState : Error processing arguments");
-		const char* ret = cobj->getTitleTTFForState(arg0);
-		jsval jsret;
-		jsret = c_string_to_jsval(cx, ret);
+		const std::string& ret = cobj->getTitleTTFForState(arg0);
+		jsval jsret = JSVAL_NULL;
+		jsret = std_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
@@ -2287,10 +1764,10 @@ JSBool js_cocos2dx_extension_ControlButton_getBackgroundSprite(JSContext *cx, ui
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getBackgroundSprite : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::extension::Scale9Sprite* ret = cobj->getBackgroundSprite();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::Scale9Sprite>(cx, (cocos2d::extension::Scale9Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -2316,7 +1793,7 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleColorForState(JSContext *cx, 
 		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleColorForState : Error processing arguments");
 		cocos2d::Color3B ret = cobj->getTitleColorForState(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = cccolor3b_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -2354,8 +1831,8 @@ JSBool js_cocos2dx_extension_ControlButton_doesAdjustBackgroundImage(JSContext *
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_doesAdjustBackgroundImage : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->doesAdjustBackgroundImage();
-		jsval jsret;
+		JSBool ret = cobj->doesAdjustBackgroundImage();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -2422,119 +1899,31 @@ JSBool js_cocos2dx_extension_ControlButton_setBackgroundSpriteForState(JSContext
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setBackgroundSpriteForState : wrong number of arguments: %d, was expecting %d", argc, 2);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_setColor(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlButton_setBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setColor : Invalid Native Object");
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setBackgroundSprite : Invalid Native Object");
 	if (argc == 1) {
-		cocos2d::Color3B arg0;
-		ok &= jsval_to_cccolor3b(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setColor : Error processing arguments");
-		cobj->setColor(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setColor : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_getTitleLabelDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleLabelDispatchTable : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::Dictionary* ret = cobj->getTitleLabelDispatchTable();
-		jsval jsret;
-		jsret = ccdictionary_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getTitleLabelDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_initWithLabelAndBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_initWithLabelAndBackgroundSprite : Invalid Native Object");
-	if (argc == 2) {
-		cocos2d::Node* arg0;
-		cocos2d::extension::Scale9Sprite* arg1;
+		cocos2d::extension::Scale9Sprite* arg0;
 		do {
 			if (!argv[0].isObject()) { ok = JS_FALSE; break; }
 			js_proxy_t *proxy;
 			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
 			proxy = jsb_get_js_proxy(tmpObj);
-			arg0 = (cocos2d::Node*)(proxy ? proxy->ptr : NULL);
+			arg0 = (cocos2d::extension::Scale9Sprite*)(proxy ? proxy->ptr : NULL);
 			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
-		do {
-			if (!argv[1].isObject()) { ok = JS_FALSE; break; }
-			js_proxy_t *proxy;
-			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[1]);
-			proxy = jsb_get_js_proxy(tmpObj);
-			arg1 = (cocos2d::extension::Scale9Sprite*)(proxy ? proxy->ptr : NULL);
-			JSB_PRECONDITION2( arg1, cx, JS_FALSE, "Invalid Native Object");
-		} while (0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_initWithLabelAndBackgroundSprite : Error processing arguments");
-		bool ret = cobj->initWithLabelAndBackgroundSprite(arg0, arg1);
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_initWithLabelAndBackgroundSprite : wrong number of arguments: %d, was expecting %d", argc, 2);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_setPreferredSize(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setPreferredSize : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Size arg0;
-		ok &= jsval_to_ccsize(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setPreferredSize : Error processing arguments");
-		cobj->setPreferredSize(arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setBackgroundSprite : Error processing arguments");
+		cobj->setBackgroundSprite(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setPreferredSize : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_setTitleLabelDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleLabelDispatchTable : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Dictionary* arg0;
-		ok &= jsval_to_ccdictionary(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleLabelDispatchTable : Error processing arguments");
-		cobj->setTitleLabelDispatchTable(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setTitleLabelDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setBackgroundSprite : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_getTitleLabel(JSContext *cx, uint32_t argc, jsval *vp)
@@ -2545,10 +1934,10 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleLabel(JSContext *cx, uint32_t
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleLabel : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Node* ret = cobj->getTitleLabel();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Node>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Node>(cx, (cocos2d::Node*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -2568,8 +1957,8 @@ JSBool js_cocos2dx_extension_ControlButton_getPreferredSize(JSContext *cx, uint3
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getPreferredSize : Invalid Native Object");
 	if (argc == 0) {
-		cocos2d::Size ret = cobj->getPreferredSize();
-		jsval jsret;
+		const cocos2d::Size& ret = cobj->getPreferredSize();
+		jsval jsret = JSVAL_NULL;
 		jsret = ccsize_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -2586,30 +1975,13 @@ JSBool js_cocos2dx_extension_ControlButton_getVerticalMargin(JSContext *cx, uint
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getVerticalMargin : Invalid Native Object");
 	if (argc == 0) {
 		int ret = cobj->getVerticalMargin();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = int32_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getVerticalMargin : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlButton_getBackgroundSpriteDispatchTable(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getBackgroundSpriteDispatchTable : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::Dictionary* ret = cobj->getBackgroundSpriteDispatchTable();
-		jsval jsret;
-		jsret = ccdictionary_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getBackgroundSpriteDispatchTable : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlButton_getTitleLabelForState(JSContext *cx, uint32_t argc, jsval *vp)
@@ -2625,10 +1997,10 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleLabelForState(JSContext *cx, 
 		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleLabelForState : Error processing arguments");
 		cocos2d::Node* ret = cobj->getTitleLabelForState(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Node>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Node>(cx, (cocos2d::Node*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -2641,6 +2013,28 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleLabelForState(JSContext *cx, 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_getTitleLabelForState : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
+JSBool js_cocos2dx_extension_ControlButton_setMargins(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setMargins : Invalid Native Object");
+	if (argc == 2) {
+		int arg0;
+		int arg1;
+		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
+		ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setMargins : Error processing arguments");
+		cobj->setMargins(arg0, arg1);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_setMargins : wrong number of arguments: %d, was expecting %d", argc, 2);
+	return JS_FALSE;
+}
 JSBool js_cocos2dx_extension_ControlButton_setTitleBMFontForState(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -2650,9 +2044,9 @@ JSBool js_cocos2dx_extension_ControlButton_setTitleBMFontForState(JSContext *cx,
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleBMFontForState : Invalid Native Object");
 	if (argc == 2) {
-		const char* arg0;
+		std::string arg0;
 		cocos2d::extension::Control::State arg1;
-		std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
+		ok &= jsval_to_std_string(cx, argv[0], &arg0);
 		ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_setTitleBMFontForState : Error processing arguments");
 		cobj->setTitleBMFontForState(arg0, arg1);
@@ -2675,9 +2069,9 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleBMFontForState(JSContext *cx,
 		cocos2d::extension::Control::State arg0;
 		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleBMFontForState : Error processing arguments");
-		const char* ret = cobj->getTitleBMFontForState(arg0);
-		jsval jsret;
-		jsret = c_string_to_jsval(cx, ret);
+		const std::string& ret = cobj->getTitleBMFontForState(arg0);
+		jsval jsret = JSVAL_NULL;
+		jsret = std_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
@@ -2692,8 +2086,8 @@ JSBool js_cocos2dx_extension_ControlButton_getZoomOnTouchDown(JSContext *cx, uin
 	cocos2d::extension::ControlButton* cobj = (cocos2d::extension::ControlButton *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getZoomOnTouchDown : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->getZoomOnTouchDown();
-		jsval jsret;
+		JSBool ret = cobj->getZoomOnTouchDown();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -2714,9 +2108,9 @@ JSBool js_cocos2dx_extension_ControlButton_getTitleForState(JSContext *cx, uint3
 		cocos2d::extension::Control::State arg0;
 		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlButton_getTitleForState : Error processing arguments");
-		cocos2d::String* ret = cobj->getTitleForState(arg0);
-		jsval jsret;
-		jsret = std_string_to_jsval(cx, ret->getCString());
+		std::string ret = cobj->getTitleForState(arg0);
+		jsval jsret = JSVAL_NULL;
+		jsret = std_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
@@ -2742,10 +2136,10 @@ JSBool js_cocos2dx_extension_ControlButton_create(JSContext *cx, uint32_t argc, 
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ControlButton* ret = cocos2d::extension::ControlButton::create(arg0);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, (cocos2d::extension::ControlButton*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -2759,10 +2153,10 @@ JSBool js_cocos2dx_extension_ControlButton_create(JSContext *cx, uint32_t argc, 
 	do {
 		if (argc == 0) {
 			cocos2d::extension::ControlButton* ret = cocos2d::extension::ControlButton::create();
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, (cocos2d::extension::ControlButton*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -2796,10 +2190,10 @@ JSBool js_cocos2dx_extension_ControlButton_create(JSContext *cx, uint32_t argc, 
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ControlButton* ret = cocos2d::extension::ControlButton::create(arg0, arg1);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, (cocos2d::extension::ControlButton*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -2815,17 +2209,17 @@ JSBool js_cocos2dx_extension_ControlButton_create(JSContext *cx, uint32_t argc, 
 			std::string arg0;
 			ok &= jsval_to_std_string(cx, argv[0], &arg0);
 			if (!ok) { ok = JS_TRUE; break; }
-			const char* arg1;
-			std::string arg1_tmp; ok &= jsval_to_std_string(cx, argv[1], &arg1_tmp); arg1 = arg1_tmp.c_str();
+			std::string arg1;
+			ok &= jsval_to_std_string(cx, argv[1], &arg1);
 			if (!ok) { ok = JS_TRUE; break; }
 			double arg2;
 			ok &= JS_ValueToNumber(cx, argv[2], &arg2);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ControlButton* ret = cocos2d::extension::ControlButton::create(arg0, arg1, arg2);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlButton>(cx, (cocos2d::extension::ControlButton*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -2838,102 +2232,51 @@ JSBool js_cocos2dx_extension_ControlButton_create(JSContext *cx, uint32_t argc, 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_create : wrong number of arguments");
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlButton_constructor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	if (argc == 0) {
-		cocos2d::extension::ControlButton* cobj = new cocos2d::extension::ControlButton();
-		cocos2d::Object *_ccobj = dynamic_cast<cocos2d::Object *>(cobj);
-		if (_ccobj) {
-			_ccobj->autorelease();
-		}
-		TypeTest<cocos2d::extension::ControlButton> t;
-		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
-		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
-		typeClass = typeMapIter->second;
-		CCASSERT(typeClass, "The value is null.");
-		JSObject *obj = JS_NewObject(cx, typeClass->jsclass, typeClass->proto, typeClass->parentProto);
-		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
-		// link the native object with the javascript object
-		js_proxy_t* p = jsb_new_proxy(cobj, obj);
-		JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlButton");
-		return JS_TRUE;
-	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlButton_constructor : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-
-
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlButton_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlButton_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlButton)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlButton_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlButton *nobj = new cocos2d::extension::ControlButton();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlButton");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlButton(JSContext *cx, JSObject *global) {
-	jsb_ControlButton_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlButton_class->name = "ControlButton";
-	jsb_ControlButton_class->addProperty = JS_PropertyStub;
-	jsb_ControlButton_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlButton_class->getProperty = JS_PropertyStub;
-	jsb_ControlButton_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlButton_class->enumerate = JS_EnumerateStub;
-	jsb_ControlButton_class->resolve = JS_ResolveStub;
-	jsb_ControlButton_class->convert = JS_ConvertStub;
-	jsb_ControlButton_class->finalize = js_cocos2dx_extension_ControlButton_finalize;
-	jsb_ControlButton_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlButton_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlButton_class->name = "ControlButton";
+	jsb_cocos2d_extension_ControlButton_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlButton_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlButton_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlButton_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlButton_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlButton_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlButton_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlButton_class->finalize = js_cocos2d_extension_ControlButton_finalize;
+	jsb_cocos2d_extension_ControlButton_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
 	};
 
 	static JSFunctionSpec funcs[] = {
-		JS_FN("setTitleColorDispatchTable", js_cocos2dx_extension_ControlButton_setTitleColorDispatchTable, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isPushed", js_cocos2dx_extension_ControlButton_isPushed, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setSelected", js_cocos2dx_extension_ControlButton_setSelected, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setTitleLabelForState", js_cocos2dx_extension_ControlButton_setTitleLabelForState, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setAdjustBackgroundImage", js_cocos2dx_extension_ControlButton_setAdjustBackgroundImage, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getLabelAnchorPoint", js_cocos2dx_extension_ControlButton_getLabelAnchorPoint, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setHighlighted", js_cocos2dx_extension_ControlButton_setHighlighted, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setZoomOnTouchDown", js_cocos2dx_extension_ControlButton_setZoomOnTouchDown, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setBackgroundSpriteDispatchTable", js_cocos2dx_extension_ControlButton_setBackgroundSpriteDispatchTable, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setTitleForState", js_cocos2dx_extension_ControlButton_setTitleForState, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getTitleDispatchTable", js_cocos2dx_extension_ControlButton_getTitleDispatchTable, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setLabelAnchorPoint", js_cocos2dx_extension_ControlButton_setLabelAnchorPoint, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("initWithBackgroundSprite", js_cocos2dx_extension_ControlButton_initWithBackgroundSprite, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("getLabelAnchorPoint", js_cocos2dx_extension_ControlButton_getLabelAnchorPoint, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTitleTTFSizeForState", js_cocos2dx_extension_ControlButton_getTitleTTFSizeForState, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setTitleDispatchTable", js_cocos2dx_extension_ControlButton_setTitleDispatchTable, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setOpacity", js_cocos2dx_extension_ControlButton_setOpacity, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("init", js_cocos2dx_extension_ControlButton_init, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setTitleTTFForState", js_cocos2dx_extension_ControlButton_setTitleTTFForState, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setTitleTTFSizeForState", js_cocos2dx_extension_ControlButton_setTitleTTFSizeForState, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setTitleLabel", js_cocos2dx_extension_ControlButton_setTitleLabel, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getOpacity", js_cocos2dx_extension_ControlButton_getOpacity, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setPreferredSize", js_cocos2dx_extension_ControlButton_setPreferredSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getCurrentTitleColor", js_cocos2dx_extension_ControlButton_getCurrentTitleColor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getTitleColorDispatchTable", js_cocos2dx_extension_ControlButton_getTitleColorDispatchTable, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setEnabled", js_cocos2dx_extension_ControlButton_setEnabled, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setBackgroundSprite", js_cocos2dx_extension_ControlButton_setBackgroundSprite, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getBackgroundSpriteForState", js_cocos2dx_extension_ControlButton_getBackgroundSpriteForState, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getColor", js_cocos2dx_extension_ControlButton_getColor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setMargins", js_cocos2dx_extension_ControlButton_setMargins, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("needsLayout", js_cocos2dx_extension_ControlButton_needsLayout, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("initWithTitleAndFontNameAndFontSize", js_cocos2dx_extension_ControlButton_initWithTitleAndFontNameAndFontSize, 3, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getCurrentTitle", js_cocos2dx_extension_ControlButton_getCurrentTitle, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getHorizontalOrigin", js_cocos2dx_extension_ControlButton_getHorizontalOrigin, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("needsLayout", js_cocos2dx_extension_ControlButton_needsLayout, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("getCurrentTitle", js_cocos2dx_extension_ControlButton_getCurrentTitle, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTitleTTFForState", js_cocos2dx_extension_ControlButton_getTitleTTFForState, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getBackgroundSprite", js_cocos2dx_extension_ControlButton_getBackgroundSprite, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTitleColorForState", js_cocos2dx_extension_ControlButton_getTitleColorForState, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
@@ -2941,21 +2284,16 @@ void js_register_cocos2dx_extension_ControlButton(JSContext *cx, JSObject *globa
 		JS_FN("doesAdjustBackgroundImage", js_cocos2dx_extension_ControlButton_doesAdjustBackgroundImage, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setBackgroundSpriteFrameForState", js_cocos2dx_extension_ControlButton_setBackgroundSpriteFrameForState, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setBackgroundSpriteForState", js_cocos2dx_extension_ControlButton_setBackgroundSpriteForState, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setColor", js_cocos2dx_extension_ControlButton_setColor, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getTitleLabelDispatchTable", js_cocos2dx_extension_ControlButton_getTitleLabelDispatchTable, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("initWithLabelAndBackgroundSprite", js_cocos2dx_extension_ControlButton_initWithLabelAndBackgroundSprite, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setPreferredSize", js_cocos2dx_extension_ControlButton_setPreferredSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setTitleLabelDispatchTable", js_cocos2dx_extension_ControlButton_setTitleLabelDispatchTable, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setBackgroundSprite", js_cocos2dx_extension_ControlButton_setBackgroundSprite, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTitleLabel", js_cocos2dx_extension_ControlButton_getTitleLabel, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getPreferredSize", js_cocos2dx_extension_ControlButton_getPreferredSize, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getVerticalMargin", js_cocos2dx_extension_ControlButton_getVerticalMargin, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getBackgroundSpriteDispatchTable", js_cocos2dx_extension_ControlButton_getBackgroundSpriteDispatchTable, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTitleLabelForState", js_cocos2dx_extension_ControlButton_getTitleLabelForState, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setMargins", js_cocos2dx_extension_ControlButton_setMargins, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setTitleBMFontForState", js_cocos2dx_extension_ControlButton_setTitleBMFontForState, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTitleBMFontForState", js_cocos2dx_extension_ControlButton_getTitleBMFontForState, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getZoomOnTouchDown", js_cocos2dx_extension_ControlButton_getZoomOnTouchDown, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getTitleForState", js_cocos2dx_extension_ControlButton_getTitleForState, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlButton_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -2964,11 +2302,11 @@ void js_register_cocos2dx_extension_ControlButton(JSContext *cx, JSObject *globa
 		JS_FS_END
 	};
 
-	jsb_ControlButton_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlButton_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlButton_class,
-		js_cocos2dx_extension_ControlButton_constructor, 0, // constructor
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlButton_class,
+		dummy_constructor<cocos2d::extension::ControlButton>, 0, // no constructor
 		properties,
 		funcs,
 		NULL, // no static properties
@@ -2980,20 +2318,19 @@ void js_register_cocos2dx_extension_ControlButton(JSContext *cx, JSObject *globa
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlButton> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlButton_class;
-		p->proto = jsb_ControlButton_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlButton_class;
+		p->proto = jsb_cocos2d_extension_ControlButton_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ControlHuePicker_class;
-JSObject *jsb_ControlHuePicker_prototype;
+JSClass  *jsb_cocos2d_extension_ControlHuePicker_class;
+JSObject *jsb_cocos2d_extension_ControlHuePicker_prototype;
 
 JSBool js_cocos2dx_extension_ControlHuePicker_setEnabled(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -3036,8 +2373,8 @@ JSBool js_cocos2dx_extension_ControlHuePicker_initWithTargetAndPos(JSContext *cx
 		} while (0);
 		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlHuePicker_initWithTargetAndPos : Error processing arguments");
-		bool ret = cobj->initWithTargetAndPos(arg0, arg1);
-		jsval jsret;
+		JSBool ret = cobj->initWithTargetAndPos(arg0, arg1);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3074,7 +2411,7 @@ JSBool js_cocos2dx_extension_ControlHuePicker_getStartPos(JSContext *cx, uint32_
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlHuePicker_getStartPos : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Point ret = cobj->getStartPos();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3090,8 +2427,8 @@ JSBool js_cocos2dx_extension_ControlHuePicker_getHue(JSContext *cx, uint32_t arg
 	cocos2d::extension::ControlHuePicker* cobj = (cocos2d::extension::ControlHuePicker *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlHuePicker_getHue : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getHue();
-		jsval jsret;
+		double ret = cobj->getHue();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3108,10 +2445,10 @@ JSBool js_cocos2dx_extension_ControlHuePicker_getSlider(JSContext *cx, uint32_t 
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlHuePicker_getSlider : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getSlider();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3179,10 +2516,10 @@ JSBool js_cocos2dx_extension_ControlHuePicker_getBackground(JSContext *cx, uint3
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlHuePicker_getBackground : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getBackground();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3202,8 +2539,8 @@ JSBool js_cocos2dx_extension_ControlHuePicker_getHuePercentage(JSContext *cx, ui
 	cocos2d::extension::ControlHuePicker* cobj = (cocos2d::extension::ControlHuePicker *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlHuePicker_getHuePercentage : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getHuePercentage();
-		jsval jsret;
+		double ret = cobj->getHuePercentage();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3257,10 +2594,10 @@ JSBool js_cocos2dx_extension_ControlHuePicker_create(JSContext *cx, uint32_t arg
 		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlHuePicker_create : Error processing arguments");
 		cocos2d::extension::ControlHuePicker* ret = cocos2d::extension::ControlHuePicker::create(arg0, arg1);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlHuePicker>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlHuePicker>(cx, (cocos2d::extension::ControlHuePicker*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -3283,8 +2620,8 @@ JSBool js_cocos2dx_extension_ControlHuePicker_constructor(JSContext *cx, uint32_
 		}
 		TypeTest<cocos2d::extension::ControlHuePicker> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -3301,36 +2638,24 @@ JSBool js_cocos2dx_extension_ControlHuePicker_constructor(JSContext *cx, uint32_
 }
 
 
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlHuePicker_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlHuePicker_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlHuePicker)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlHuePicker_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlHuePicker *nobj = new cocos2d::extension::ControlHuePicker();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlHuePicker");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlHuePicker(JSContext *cx, JSObject *global) {
-	jsb_ControlHuePicker_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlHuePicker_class->name = "ControlHuePicker";
-	jsb_ControlHuePicker_class->addProperty = JS_PropertyStub;
-	jsb_ControlHuePicker_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlHuePicker_class->getProperty = JS_PropertyStub;
-	jsb_ControlHuePicker_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlHuePicker_class->enumerate = JS_EnumerateStub;
-	jsb_ControlHuePicker_class->resolve = JS_ResolveStub;
-	jsb_ControlHuePicker_class->convert = JS_ConvertStub;
-	jsb_ControlHuePicker_class->finalize = js_cocos2dx_extension_ControlHuePicker_finalize;
-	jsb_ControlHuePicker_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlHuePicker_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlHuePicker_class->name = "ControlHuePicker";
+	jsb_cocos2d_extension_ControlHuePicker_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlHuePicker_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlHuePicker_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlHuePicker_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlHuePicker_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlHuePicker_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlHuePicker_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlHuePicker_class->finalize = js_cocos2d_extension_ControlHuePicker_finalize;
+	jsb_cocos2d_extension_ControlHuePicker_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -3348,7 +2673,6 @@ void js_register_cocos2dx_extension_ControlHuePicker(JSContext *cx, JSObject *gl
 		JS_FN("getBackground", js_cocos2dx_extension_ControlHuePicker_getBackground, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getHuePercentage", js_cocos2dx_extension_ControlHuePicker_getHuePercentage, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setSlider", js_cocos2dx_extension_ControlHuePicker_setSlider, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlHuePicker_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -3357,10 +2681,10 @@ void js_register_cocos2dx_extension_ControlHuePicker(JSContext *cx, JSObject *gl
 		JS_FS_END
 	};
 
-	jsb_ControlHuePicker_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlHuePicker_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlHuePicker_class,
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlHuePicker_class,
 		js_cocos2dx_extension_ControlHuePicker_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -3373,20 +2697,19 @@ void js_register_cocos2dx_extension_ControlHuePicker(JSContext *cx, JSObject *gl
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlHuePicker> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlHuePicker_class;
-		p->proto = jsb_ControlHuePicker_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlHuePicker_class;
+		p->proto = jsb_cocos2d_extension_ControlHuePicker_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ControlSaturationBrightnessPicker_class;
-JSObject *jsb_ControlSaturationBrightnessPicker_prototype;
+JSClass  *jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class;
+JSObject *jsb_cocos2d_extension_ControlSaturationBrightnessPicker_prototype;
 
 JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getShadow(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -3396,10 +2719,10 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getShadow(JSConte
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_getShadow : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getShadow();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3433,8 +2756,8 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_initWithTargetAnd
 		} while (0);
 		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_initWithTargetAndPos : Error processing arguments");
-		bool ret = cobj->initWithTargetAndPos(arg0, arg1);
-		jsval jsret;
+		JSBool ret = cobj->initWithTargetAndPos(arg0, arg1);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3451,7 +2774,7 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getStartPos(JSCon
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_getStartPos : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Point ret = cobj->getStartPos();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3468,10 +2791,10 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getOverlay(JSCont
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_getOverlay : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getOverlay();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3512,10 +2835,10 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getSlider(JSConte
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_getSlider : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getSlider();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3536,10 +2859,10 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getBackground(JSC
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_getBackground : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getBackground();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3559,8 +2882,8 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getSaturation(JSC
 	cocos2d::extension::ControlSaturationBrightnessPicker* cobj = (cocos2d::extension::ControlSaturationBrightnessPicker *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_getSaturation : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getSaturation();
-		jsval jsret;
+		double ret = cobj->getSaturation();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3576,8 +2899,8 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getBrightness(JSC
 	cocos2d::extension::ControlSaturationBrightnessPicker* cobj = (cocos2d::extension::ControlSaturationBrightnessPicker *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_getBrightness : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getBrightness();
-		jsval jsret;
+		double ret = cobj->getBrightness();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3604,10 +2927,10 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_create(JSContext 
 		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlSaturationBrightnessPicker_create : Error processing arguments");
 		cocos2d::extension::ControlSaturationBrightnessPicker* ret = cocos2d::extension::ControlSaturationBrightnessPicker::create(arg0, arg1);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSaturationBrightnessPicker>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSaturationBrightnessPicker>(cx, (cocos2d::extension::ControlSaturationBrightnessPicker*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -3630,8 +2953,8 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_constructor(JSCon
 		}
 		TypeTest<cocos2d::extension::ControlSaturationBrightnessPicker> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -3648,36 +2971,24 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_constructor(JSCon
 }
 
 
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlSaturationBrightnessPicker_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlSaturationBrightnessPicker_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlSaturationBrightnessPicker)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlSaturationBrightnessPicker *nobj = new cocos2d::extension::ControlSaturationBrightnessPicker();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlSaturationBrightnessPicker");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlSaturationBrightnessPicker(JSContext *cx, JSObject *global) {
-	jsb_ControlSaturationBrightnessPicker_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlSaturationBrightnessPicker_class->name = "ControlSaturationBrightnessPicker";
-	jsb_ControlSaturationBrightnessPicker_class->addProperty = JS_PropertyStub;
-	jsb_ControlSaturationBrightnessPicker_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlSaturationBrightnessPicker_class->getProperty = JS_PropertyStub;
-	jsb_ControlSaturationBrightnessPicker_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlSaturationBrightnessPicker_class->enumerate = JS_EnumerateStub;
-	jsb_ControlSaturationBrightnessPicker_class->resolve = JS_ResolveStub;
-	jsb_ControlSaturationBrightnessPicker_class->convert = JS_ConvertStub;
-	jsb_ControlSaturationBrightnessPicker_class->finalize = js_cocos2dx_extension_ControlSaturationBrightnessPicker_finalize;
-	jsb_ControlSaturationBrightnessPicker_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->name = "ControlSaturationBrightnessPicker";
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->finalize = js_cocos2d_extension_ControlSaturationBrightnessPicker_finalize;
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -3693,7 +3004,6 @@ void js_register_cocos2dx_extension_ControlSaturationBrightnessPicker(JSContext 
 		JS_FN("getBackground", js_cocos2dx_extension_ControlSaturationBrightnessPicker_getBackground, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getSaturation", js_cocos2dx_extension_ControlSaturationBrightnessPicker_getSaturation, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getBrightness", js_cocos2dx_extension_ControlSaturationBrightnessPicker_getBrightness, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlSaturationBrightnessPicker_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -3702,10 +3012,10 @@ void js_register_cocos2dx_extension_ControlSaturationBrightnessPicker(JSContext 
 		JS_FS_END
 	};
 
-	jsb_ControlSaturationBrightnessPicker_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlSaturationBrightnessPicker_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlSaturationBrightnessPicker_class,
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class,
 		js_cocos2dx_extension_ControlSaturationBrightnessPicker_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -3718,20 +3028,19 @@ void js_register_cocos2dx_extension_ControlSaturationBrightnessPicker(JSContext 
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlSaturationBrightnessPicker> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlSaturationBrightnessPicker_class;
-		p->proto = jsb_ControlSaturationBrightnessPicker_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class;
+		p->proto = jsb_cocos2d_extension_ControlSaturationBrightnessPicker_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ControlColourPicker_class;
-JSObject *jsb_ControlColourPicker_prototype;
+JSClass  *jsb_cocos2d_extension_ControlColourPicker_class;
+JSObject *jsb_cocos2d_extension_ControlColourPicker_prototype;
 
 JSBool js_cocos2dx_extension_ControlColourPicker_setEnabled(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -3761,10 +3070,10 @@ JSBool js_cocos2dx_extension_ControlColourPicker_getHuePicker(JSContext *cx, uin
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlColourPicker_getHuePicker : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::extension::ControlHuePicker* ret = cobj->getHuePicker();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlHuePicker>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlHuePicker>(cx, (cocos2d::extension::ControlHuePicker*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3834,10 +3143,10 @@ JSBool js_cocos2dx_extension_ControlColourPicker_getcolourPicker(JSContext *cx, 
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlColourPicker_getcolourPicker : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::extension::ControlSaturationBrightnessPicker* ret = cobj->getcolourPicker();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSaturationBrightnessPicker>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSaturationBrightnessPicker>(cx, (cocos2d::extension::ControlSaturationBrightnessPicker*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -3884,8 +3193,8 @@ JSBool js_cocos2dx_extension_ControlColourPicker_init(JSContext *cx, uint32_t ar
 	cocos2d::extension::ControlColourPicker* cobj = (cocos2d::extension::ControlColourPicker *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlColourPicker_init : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->init();
-		jsval jsret;
+		JSBool ret = cobj->init();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -3985,10 +3294,10 @@ JSBool js_cocos2dx_extension_ControlColourPicker_getBackground(JSContext *cx, ui
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlColourPicker_getBackground : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getBackground();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -4005,10 +3314,10 @@ JSBool js_cocos2dx_extension_ControlColourPicker_create(JSContext *cx, uint32_t 
 {
 	if (argc == 0) {
 		cocos2d::extension::ControlColourPicker* ret = cocos2d::extension::ControlColourPicker::create();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlColourPicker>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlColourPicker>(cx, (cocos2d::extension::ControlColourPicker*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -4031,8 +3340,8 @@ JSBool js_cocos2dx_extension_ControlColourPicker_constructor(JSContext *cx, uint
 		}
 		TypeTest<cocos2d::extension::ControlColourPicker> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -4049,36 +3358,24 @@ JSBool js_cocos2dx_extension_ControlColourPicker_constructor(JSContext *cx, uint
 }
 
 
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlColourPicker_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlColourPicker_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlColourPicker)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlColourPicker_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlColourPicker *nobj = new cocos2d::extension::ControlColourPicker();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlColourPicker");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlColourPicker(JSContext *cx, JSObject *global) {
-	jsb_ControlColourPicker_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlColourPicker_class->name = "ControlColourPicker";
-	jsb_ControlColourPicker_class->addProperty = JS_PropertyStub;
-	jsb_ControlColourPicker_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlColourPicker_class->getProperty = JS_PropertyStub;
-	jsb_ControlColourPicker_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlColourPicker_class->enumerate = JS_EnumerateStub;
-	jsb_ControlColourPicker_class->resolve = JS_ResolveStub;
-	jsb_ControlColourPicker_class->convert = JS_ConvertStub;
-	jsb_ControlColourPicker_class->finalize = js_cocos2dx_extension_ControlColourPicker_finalize;
-	jsb_ControlColourPicker_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlColourPicker_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlColourPicker_class->name = "ControlColourPicker";
+	jsb_cocos2d_extension_ControlColourPicker_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlColourPicker_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlColourPicker_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlColourPicker_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlColourPicker_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlColourPicker_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlColourPicker_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlColourPicker_class->finalize = js_cocos2d_extension_ControlColourPicker_finalize;
+	jsb_cocos2d_extension_ControlColourPicker_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -4096,7 +3393,6 @@ void js_register_cocos2dx_extension_ControlColourPicker(JSContext *cx, JSObject 
 		JS_FN("colourSliderValueChanged", js_cocos2dx_extension_ControlColourPicker_colourSliderValueChanged, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setHuePicker", js_cocos2dx_extension_ControlColourPicker_setHuePicker, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getBackground", js_cocos2dx_extension_ControlColourPicker_getBackground, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlColourPicker_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -4105,10 +3401,10 @@ void js_register_cocos2dx_extension_ControlColourPicker(JSContext *cx, JSObject 
 		JS_FS_END
 	};
 
-	jsb_ControlColourPicker_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlColourPicker_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlColourPicker_class,
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlColourPicker_class,
 		js_cocos2dx_extension_ControlColourPicker_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -4121,20 +3417,19 @@ void js_register_cocos2dx_extension_ControlColourPicker(JSContext *cx, JSObject 
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlColourPicker> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlColourPicker_class;
-		p->proto = jsb_ControlColourPicker_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlColourPicker_class;
+		p->proto = jsb_cocos2d_extension_ControlColourPicker_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ControlPotentiometer_class;
-JSObject *jsb_ControlPotentiometer_prototype;
+JSClass  *jsb_cocos2d_extension_ControlPotentiometer_class;
+JSObject *jsb_cocos2d_extension_ControlPotentiometer_prototype;
 
 JSBool js_cocos2dx_extension_ControlPotentiometer_setPreviousLocation(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -4156,51 +3451,133 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_setPreviousLocation(JSContext 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setPreviousLocation : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlPotentiometer_setProgressTimer(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlPotentiometer_setValue(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setProgressTimer : Invalid Native Object");
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setValue : Invalid Native Object");
 	if (argc == 1) {
-		cocos2d::ProgressTimer* arg0;
-		do {
-			if (!argv[0].isObject()) { ok = JS_FALSE; break; }
-			js_proxy_t *proxy;
-			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-			proxy = jsb_get_js_proxy(tmpObj);
-			arg0 = (cocos2d::ProgressTimer*)(proxy ? proxy->ptr : NULL);
-			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
-		} while (0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setProgressTimer : Error processing arguments");
-		cobj->setProgressTimer(arg0);
+		double arg0;
+		ok &= JS_ValueToNumber(cx, argv[0], &arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setValue : Error processing arguments");
+		cobj->setValue(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setProgressTimer : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setValue : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlPotentiometer_getProgressTimer(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getProgressTimer : Invalid Native Object");
+	if (argc == 0) {
+		cocos2d::ProgressTimer* ret = cobj->getProgressTimer();
+		jsval jsret = JSVAL_NULL;
+		do {
+			if (ret) {
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::ProgressTimer>(cx, (cocos2d::ProgressTimer*)ret);
+				jsret = OBJECT_TO_JSVAL(proxy->obj);
+			} else {
+				jsret = JSVAL_NULL;
+			}
+		} while (0);
+		JS_SET_RVAL(cx, vp, jsret);
+		return JS_TRUE;
+	}
+
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_getProgressTimer : wrong number of arguments: %d, was expecting %d", argc, 0);
+	return JS_FALSE;
+}
+JSBool js_cocos2dx_extension_ControlPotentiometer_getMaximumValue(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getMaximumValue : Invalid Native Object");
+	if (argc == 0) {
+		double ret = cobj->getMaximumValue();
+		jsval jsret = JSVAL_NULL;
+		jsret = DOUBLE_TO_JSVAL(ret);
+		JS_SET_RVAL(cx, vp, jsret);
+		return JS_TRUE;
+	}
+
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_getMaximumValue : wrong number of arguments: %d, was expecting %d", argc, 0);
+	return JS_FALSE;
+}
+JSBool js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved : Invalid Native Object");
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint : Invalid Native Object");
+	if (argc == 4) {
+		cocos2d::Point arg0;
+		cocos2d::Point arg1;
+		cocos2d::Point arg2;
+		cocos2d::Point arg3;
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+		ok &= jsval_to_ccpoint(cx, argv[2], &arg2);
+		ok &= jsval_to_ccpoint(cx, argv[3], &arg3);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint : Error processing arguments");
+		double ret = cobj->angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint(arg0, arg1, arg2, arg3);
+		jsval jsret = JSVAL_NULL;
+		jsret = DOUBLE_TO_JSVAL(ret);
+		JS_SET_RVAL(cx, vp, jsret);
+		return JS_TRUE;
+	}
+
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint : wrong number of arguments: %d, was expecting %d", argc, 4);
+	return JS_FALSE;
+}
+JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan : Invalid Native Object");
 	if (argc == 1) {
 		cocos2d::Point arg0;
 		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved : Error processing arguments");
-		cobj->potentiometerMoved(arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan : Error processing arguments");
+		cobj->potentiometerBegan(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan : wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+JSBool js_cocos2dx_extension_ControlPotentiometer_setMaximumValue(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMaximumValue : Invalid Native Object");
+	if (argc == 1) {
+		double arg0;
+		ok &= JS_ValueToNumber(cx, argv[0], &arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMaximumValue : Error processing arguments");
+		cobj->setMaximumValue(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setMaximumValue : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlPotentiometer_getMinimumValue(JSContext *cx, uint32_t argc, jsval *vp)
@@ -4210,8 +3587,8 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_getMinimumValue(JSContext *cx,
 	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getMinimumValue : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getMinimumValue();
-		jsval jsret;
+		double ret = cobj->getMinimumValue();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -4247,24 +3624,21 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_setThumbSprite(JSContext *cx, 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setThumbSprite : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlPotentiometer_setMinimumValue(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlPotentiometer_getValue(JSContext *cx, uint32_t argc, jsval *vp)
 {
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMinimumValue : Invalid Native Object");
-	if (argc == 1) {
-		double arg0;
-		ok &= JS_ValueToNumber(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMinimumValue : Error processing arguments");
-		cobj->setMinimumValue(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getValue : Invalid Native Object");
+	if (argc == 0) {
+		double ret = cobj->getValue();
+		jsval jsret = JSVAL_NULL;
+		jsret = DOUBLE_TO_JSVAL(ret);
+		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setMinimumValue : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_getValue : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation(JSContext *cx, uint32_t argc, jsval *vp)
@@ -4275,7 +3649,7 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation(JSContext 
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Point ret = cobj->getPreviousLocation();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -4284,92 +3658,28 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation(JSContext 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlPotentiometer_setEnabled(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setEnabled : Invalid Native Object");
-	if (argc == 1) {
-		JSBool arg0;
-		ok &= JS_ValueToBoolean(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setEnabled : Error processing arguments");
-		cobj->setEnabled(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setEnabled : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlPotentiometer_setValue(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setValue : Invalid Native Object");
-	if (argc == 1) {
-		double arg0;
-		ok &= JS_ValueToNumber(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setValue : Error processing arguments");
-		cobj->setValue(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setValue : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlPotentiometer_setMaximumValue(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMaximumValue : Invalid Native Object");
-	if (argc == 1) {
-		double arg0;
-		ok &= JS_ValueToNumber(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMaximumValue : Error processing arguments");
-		cobj->setMaximumValue(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setMaximumValue : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint : Invalid Native Object");
-	if (argc == 4) {
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint : Invalid Native Object");
+	if (argc == 2) {
 		cocos2d::Point arg0;
 		cocos2d::Point arg1;
-		cocos2d::Point arg2;
-		cocos2d::Point arg3;
 		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
-		ok &= jsval_to_ccpoint(cx, argv[2], &arg2);
-		ok &= jsval_to_ccpoint(cx, argv[3], &arg3);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint : Error processing arguments");
-		float ret = cobj->angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint(arg0, arg1, arg2, arg3);
-		jsval jsret;
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint : Error processing arguments");
+		double ret = cobj->distanceBetweenPointAndPoint(arg0, arg1);
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint : wrong number of arguments: %d, was expecting %d", argc, 4);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint : wrong number of arguments: %d, was expecting %d", argc, 2);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerEnded(JSContext *cx, uint32_t argc, jsval *vp)
@@ -4392,135 +3702,51 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerEnded(JSContext *
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_potentiometerEnded : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlPotentiometer_setProgressTimer(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint : Invalid Native Object");
-	if (argc == 2) {
-		cocos2d::Point arg0;
-		cocos2d::Point arg1;
-		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
-		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint : Error processing arguments");
-		float ret = cobj->distanceBetweenPointAndPoint(arg0, arg1);
-		jsval jsret;
-		jsret = DOUBLE_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint : wrong number of arguments: %d, was expecting %d", argc, 2);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlPotentiometer_getProgressTimer(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getProgressTimer : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::ProgressTimer* ret = cobj->getProgressTimer();
-		jsval jsret;
-		do {
-			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::ProgressTimer>(cx, ret);
-				jsret = OBJECT_TO_JSVAL(proxy->obj);
-			} else {
-				jsret = JSVAL_NULL;
-			}
-		} while (0);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_getProgressTimer : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlPotentiometer_getMaximumValue(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getMaximumValue : Invalid Native Object");
-	if (argc == 0) {
-		float ret = cobj->getMaximumValue();
-		jsval jsret;
-		jsret = DOUBLE_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_getMaximumValue : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlPotentiometer_isTouchInside(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_isTouchInside : Invalid Native Object");
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setProgressTimer : Invalid Native Object");
 	if (argc == 1) {
-		cocos2d::Touch* arg0;
+		cocos2d::ProgressTimer* arg0;
 		do {
 			if (!argv[0].isObject()) { ok = JS_FALSE; break; }
 			js_proxy_t *proxy;
 			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
 			proxy = jsb_get_js_proxy(tmpObj);
-			arg0 = (cocos2d::Touch*)(proxy ? proxy->ptr : NULL);
+			arg0 = (cocos2d::ProgressTimer*)(proxy ? proxy->ptr : NULL);
 			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_isTouchInside : Error processing arguments");
-		bool ret = cobj->isTouchInside(arg0);
-		jsval jsret;
-		jsret = BOOLEAN_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setProgressTimer : Error processing arguments");
+		cobj->setProgressTimer(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_isTouchInside : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setProgressTimer : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ControlPotentiometer_getValue(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getValue : Invalid Native Object");
-	if (argc == 0) {
-		float ret = cobj->getValue();
-		jsval jsret;
-		jsret = DOUBLE_TO_JSVAL(ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_getValue : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_ControlPotentiometer_setMinimumValue(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSBool ok = JS_TRUE;
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy = jsb_get_js_proxy(obj);
 	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan : Invalid Native Object");
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMinimumValue : Invalid Native Object");
 	if (argc == 1) {
-		cocos2d::Point arg0;
-		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan : Error processing arguments");
-		cobj->potentiometerBegan(arg0);
+		double arg0;
+		ok &= JS_ValueToNumber(cx, argv[0], &arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_setMinimumValue : Error processing arguments");
+		cobj->setMinimumValue(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan : wrong number of arguments: %d, was expecting %d", argc, 1);
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_setMinimumValue : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlPotentiometer_getThumbSprite(JSContext *cx, uint32_t argc, jsval *vp)
@@ -4531,10 +3757,10 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_getThumbSprite(JSContext *cx, 
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_getThumbSprite : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getThumbSprite();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -4584,14 +3810,34 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_initWithTrackSprite_ProgressTi
 			JSB_PRECONDITION2( arg2, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_initWithTrackSprite_ProgressTimer_ThumbSprite : Error processing arguments");
-		bool ret = cobj->initWithTrackSprite_ProgressTimer_ThumbSprite(arg0, arg1, arg2);
-		jsval jsret;
+		JSBool ret = cobj->initWithTrackSprite_ProgressTimer_ThumbSprite(arg0, arg1, arg2);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_initWithTrackSprite_ProgressTimer_ThumbSprite : wrong number of arguments: %d, was expecting %d", argc, 3);
+	return JS_FALSE;
+}
+JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cocos2d::extension::ControlPotentiometer* cobj = (cocos2d::extension::ControlPotentiometer *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved : Invalid Native Object");
+	if (argc == 1) {
+		cocos2d::Point arg0;
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved : Error processing arguments");
+		cobj->potentiometerMoved(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+
+	JS_ReportError(cx, "js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ControlPotentiometer_create(JSContext *cx, uint32_t argc, jsval *vp)
@@ -4607,10 +3853,10 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_create(JSContext *cx, uint32_t
 		std::string arg2_tmp; ok &= jsval_to_std_string(cx, argv[2], &arg2_tmp); arg2 = arg2_tmp.c_str();
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlPotentiometer_create : Error processing arguments");
 		cocos2d::extension::ControlPotentiometer* ret = cocos2d::extension::ControlPotentiometer::create(arg0, arg1, arg2);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlPotentiometer>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlPotentiometer>(cx, (cocos2d::extension::ControlPotentiometer*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -4633,8 +3879,8 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_constructor(JSContext *cx, uin
 		}
 		TypeTest<cocos2d::extension::ControlPotentiometer> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -4651,36 +3897,24 @@ JSBool js_cocos2dx_extension_ControlPotentiometer_constructor(JSContext *cx, uin
 }
 
 
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlPotentiometer_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlPotentiometer_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlPotentiometer)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlPotentiometer_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlPotentiometer *nobj = new cocos2d::extension::ControlPotentiometer();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlPotentiometer");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlPotentiometer(JSContext *cx, JSObject *global) {
-	jsb_ControlPotentiometer_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlPotentiometer_class->name = "ControlPotentiometer";
-	jsb_ControlPotentiometer_class->addProperty = JS_PropertyStub;
-	jsb_ControlPotentiometer_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlPotentiometer_class->getProperty = JS_PropertyStub;
-	jsb_ControlPotentiometer_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlPotentiometer_class->enumerate = JS_EnumerateStub;
-	jsb_ControlPotentiometer_class->resolve = JS_ResolveStub;
-	jsb_ControlPotentiometer_class->convert = JS_ConvertStub;
-	jsb_ControlPotentiometer_class->finalize = js_cocos2dx_extension_ControlPotentiometer_finalize;
-	jsb_ControlPotentiometer_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlPotentiometer_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlPotentiometer_class->name = "ControlPotentiometer";
+	jsb_cocos2d_extension_ControlPotentiometer_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlPotentiometer_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlPotentiometer_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlPotentiometer_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlPotentiometer_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlPotentiometer_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlPotentiometer_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlPotentiometer_class->finalize = js_cocos2d_extension_ControlPotentiometer_finalize;
+	jsb_cocos2d_extension_ControlPotentiometer_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -4688,26 +3922,23 @@ void js_register_cocos2dx_extension_ControlPotentiometer(JSContext *cx, JSObject
 
 	static JSFunctionSpec funcs[] = {
 		JS_FN("setPreviousLocation", js_cocos2dx_extension_ControlPotentiometer_setPreviousLocation, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setProgressTimer", js_cocos2dx_extension_ControlPotentiometer_setProgressTimer, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("potentiometerMoved", js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getMinimumValue", js_cocos2dx_extension_ControlPotentiometer_getMinimumValue, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setThumbSprite", js_cocos2dx_extension_ControlPotentiometer_setThumbSprite, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setMinimumValue", js_cocos2dx_extension_ControlPotentiometer_setMinimumValue, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getPreviousLocation", js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setEnabled", js_cocos2dx_extension_ControlPotentiometer_setEnabled, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setValue", js_cocos2dx_extension_ControlPotentiometer_setValue, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setMaximumValue", js_cocos2dx_extension_ControlPotentiometer_setMaximumValue, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint", js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint, 4, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("potentiometerEnded", js_cocos2dx_extension_ControlPotentiometer_potentiometerEnded, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("distanceBetweenPointAndPoint", js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getProgressTimer", js_cocos2dx_extension_ControlPotentiometer_getProgressTimer, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getMaximumValue", js_cocos2dx_extension_ControlPotentiometer_getMaximumValue, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("isTouchInside", js_cocos2dx_extension_ControlPotentiometer_isTouchInside, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getValue", js_cocos2dx_extension_ControlPotentiometer_getValue, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint", js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint, 4, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("potentiometerBegan", js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setMaximumValue", js_cocos2dx_extension_ControlPotentiometer_setMaximumValue, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("getMinimumValue", js_cocos2dx_extension_ControlPotentiometer_getMinimumValue, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setThumbSprite", js_cocos2dx_extension_ControlPotentiometer_setThumbSprite, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("getValue", js_cocos2dx_extension_ControlPotentiometer_getValue, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("getPreviousLocation", js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("distanceBetweenPointAndPoint", js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("potentiometerEnded", js_cocos2dx_extension_ControlPotentiometer_potentiometerEnded, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setProgressTimer", js_cocos2dx_extension_ControlPotentiometer_setProgressTimer, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setMinimumValue", js_cocos2dx_extension_ControlPotentiometer_setMinimumValue, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getThumbSprite", js_cocos2dx_extension_ControlPotentiometer_getThumbSprite, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("initWithTrackSprite_ProgressTimer_ThumbSprite", js_cocos2dx_extension_ControlPotentiometer_initWithTrackSprite_ProgressTimer_ThumbSprite, 3, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlPotentiometer_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("potentiometerMoved", js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -4716,10 +3947,10 @@ void js_register_cocos2dx_extension_ControlPotentiometer(JSContext *cx, JSObject
 		JS_FS_END
 	};
 
-	jsb_ControlPotentiometer_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlPotentiometer_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlPotentiometer_class,
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlPotentiometer_class,
 		js_cocos2dx_extension_ControlPotentiometer_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -4732,20 +3963,19 @@ void js_register_cocos2dx_extension_ControlPotentiometer(JSContext *cx, JSObject
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlPotentiometer> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlPotentiometer_class;
-		p->proto = jsb_ControlPotentiometer_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlPotentiometer_class;
+		p->proto = jsb_cocos2d_extension_ControlPotentiometer_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ControlSlider_class;
-JSObject *jsb_ControlSlider_prototype;
+JSClass  *jsb_cocos2d_extension_ControlSlider_class;
+JSObject *jsb_cocos2d_extension_ControlSlider_prototype;
 
 JSBool js_cocos2dx_extension_ControlSlider_locationFromTouch(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -4767,7 +3997,7 @@ JSBool js_cocos2dx_extension_ControlSlider_locationFromTouch(JSContext *cx, uint
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_locationFromTouch : Error processing arguments");
 		cocos2d::Point ret = cobj->locationFromTouch(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -4810,8 +4040,8 @@ JSBool js_cocos2dx_extension_ControlSlider_getMaximumAllowedValue(JSContext *cx,
 	cocos2d::extension::ControlSlider* cobj = (cocos2d::extension::ControlSlider *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getMaximumAllowedValue : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getMaximumAllowedValue();
-		jsval jsret;
+		double ret = cobj->getMaximumAllowedValue();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -4827,8 +4057,8 @@ JSBool js_cocos2dx_extension_ControlSlider_getMinimumAllowedValue(JSContext *cx,
 	cocos2d::extension::ControlSlider* cobj = (cocos2d::extension::ControlSlider *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getMinimumAllowedValue : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getMinimumAllowedValue();
-		jsval jsret;
+		double ret = cobj->getMinimumAllowedValue();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -4844,8 +4074,8 @@ JSBool js_cocos2dx_extension_ControlSlider_getMinimumValue(JSContext *cx, uint32
 	cocos2d::extension::ControlSlider* cobj = (cocos2d::extension::ControlSlider *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getMinimumValue : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getMinimumValue();
-		jsval jsret;
+		double ret = cobj->getMinimumValue();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5004,10 +4234,10 @@ JSBool js_cocos2dx_extension_ControlSlider_getBackgroundSprite(JSContext *cx, ui
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getBackgroundSprite : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getBackgroundSprite();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -5057,8 +4287,8 @@ JSBool js_cocos2dx_extension_ControlSlider_initWithSprites(JSContext *cx, uint32
 			JSB_PRECONDITION2( arg2, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_initWithSprites : Error processing arguments");
-		bool ret = cobj->initWithSprites(arg0, arg1, arg2);
-		jsval jsret;
+		JSBool ret = cobj->initWithSprites(arg0, arg1, arg2);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5074,8 +4304,8 @@ JSBool js_cocos2dx_extension_ControlSlider_getMaximumValue(JSContext *cx, uint32
 	cocos2d::extension::ControlSlider* cobj = (cocos2d::extension::ControlSlider *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getMaximumValue : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getMaximumValue();
-		jsval jsret;
+		double ret = cobj->getMaximumValue();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5103,8 +4333,8 @@ JSBool js_cocos2dx_extension_ControlSlider_isTouchInside(JSContext *cx, uint32_t
 			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_isTouchInside : Error processing arguments");
-		bool ret = cobj->isTouchInside(arg0);
-		jsval jsret;
+		JSBool ret = cobj->isTouchInside(arg0);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5120,8 +4350,8 @@ JSBool js_cocos2dx_extension_ControlSlider_getValue(JSContext *cx, uint32_t argc
 	cocos2d::extension::ControlSlider* cobj = (cocos2d::extension::ControlSlider *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getValue : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getValue();
-		jsval jsret;
+		double ret = cobj->getValue();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5138,10 +4368,10 @@ JSBool js_cocos2dx_extension_ControlSlider_getThumbSprite(JSContext *cx, uint32_
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getThumbSprite : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getThumbSprite();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -5162,10 +4392,10 @@ JSBool js_cocos2dx_extension_ControlSlider_getProgressSprite(JSContext *cx, uint
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSlider_getProgressSprite : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getProgressSprite();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -5263,10 +4493,10 @@ JSBool js_cocos2dx_extension_ControlSlider_create(JSContext *cx, uint32_t argc, 
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ControlSlider* ret = cocos2d::extension::ControlSlider::create(arg0, arg1, arg2);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSlider>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSlider>(cx, (cocos2d::extension::ControlSlider*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -5289,10 +4519,10 @@ JSBool js_cocos2dx_extension_ControlSlider_create(JSContext *cx, uint32_t argc, 
 			std::string arg2_tmp; ok &= jsval_to_std_string(cx, argv[2], &arg2_tmp); arg2 = arg2_tmp.c_str();
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ControlSlider* ret = cocos2d::extension::ControlSlider::create(arg0, arg1, arg2);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSlider>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSlider>(cx, (cocos2d::extension::ControlSlider*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -5315,8 +4545,8 @@ JSBool js_cocos2dx_extension_ControlSlider_constructor(JSContext *cx, uint32_t a
 		}
 		TypeTest<cocos2d::extension::ControlSlider> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -5333,36 +4563,24 @@ JSBool js_cocos2dx_extension_ControlSlider_constructor(JSContext *cx, uint32_t a
 }
 
 
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlSlider_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlSlider_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlSlider)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlSlider_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlSlider *nobj = new cocos2d::extension::ControlSlider();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlSlider");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlSlider(JSContext *cx, JSObject *global) {
-	jsb_ControlSlider_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlSlider_class->name = "ControlSlider";
-	jsb_ControlSlider_class->addProperty = JS_PropertyStub;
-	jsb_ControlSlider_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlSlider_class->getProperty = JS_PropertyStub;
-	jsb_ControlSlider_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlSlider_class->enumerate = JS_EnumerateStub;
-	jsb_ControlSlider_class->resolve = JS_ResolveStub;
-	jsb_ControlSlider_class->convert = JS_ConvertStub;
-	jsb_ControlSlider_class->finalize = js_cocos2dx_extension_ControlSlider_finalize;
-	jsb_ControlSlider_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlSlider_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlSlider_class->name = "ControlSlider";
+	jsb_cocos2d_extension_ControlSlider_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlSlider_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlSlider_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlSlider_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlSlider_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlSlider_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlSlider_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlSlider_class->finalize = js_cocos2d_extension_ControlSlider_finalize;
+	jsb_cocos2d_extension_ControlSlider_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -5390,7 +4608,6 @@ void js_register_cocos2dx_extension_ControlSlider(JSContext *cx, JSObject *globa
 		JS_FN("getProgressSprite", js_cocos2dx_extension_ControlSlider_getProgressSprite, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setBackgroundSprite", js_cocos2dx_extension_ControlSlider_setBackgroundSprite, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setMaximumAllowedValue", js_cocos2dx_extension_ControlSlider_setMaximumAllowedValue, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlSlider_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -5399,10 +4616,10 @@ void js_register_cocos2dx_extension_ControlSlider(JSContext *cx, JSObject *globa
 		JS_FS_END
 	};
 
-	jsb_ControlSlider_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlSlider_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlSlider_class,
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlSlider_class,
 		js_cocos2dx_extension_ControlSlider_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -5415,20 +4632,19 @@ void js_register_cocos2dx_extension_ControlSlider(JSContext *cx, JSObject *globa
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlSlider> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlSlider_class;
-		p->proto = jsb_ControlSlider_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlSlider_class;
+		p->proto = jsb_cocos2d_extension_ControlSlider_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ControlStepper_class;
-JSObject *jsb_ControlStepper_prototype;
+JSClass  *jsb_cocos2d_extension_ControlStepper_class;
+JSObject *jsb_cocos2d_extension_ControlStepper_prototype;
 
 JSBool js_cocos2dx_extension_ControlStepper_setMinusSprite(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -5465,10 +4681,10 @@ JSBool js_cocos2dx_extension_ControlStepper_getMinusLabel(JSContext *cx, uint32_
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_getMinusLabel : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::LabelTTF* ret = cobj->getMinusLabel();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::LabelTTF>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::LabelTTF>(cx, (cocos2d::LabelTTF*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -5508,8 +4724,8 @@ JSBool js_cocos2dx_extension_ControlStepper_isContinuous(JSContext *cx, uint32_t
 	cocos2d::extension::ControlStepper* cobj = (cocos2d::extension::ControlStepper *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_isContinuous : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isContinuous();
-		jsval jsret;
+		JSBool ret = cobj->isContinuous();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5526,10 +4742,10 @@ JSBool js_cocos2dx_extension_ControlStepper_getMinusSprite(JSContext *cx, uint32
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_getMinusSprite : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getMinusSprite();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -5592,10 +4808,10 @@ JSBool js_cocos2dx_extension_ControlStepper_getPlusLabel(JSContext *cx, uint32_t
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_getPlusLabel : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::LabelTTF* ret = cobj->getPlusLabel();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::LabelTTF>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::LabelTTF>(cx, (cocos2d::LabelTTF*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -5651,10 +4867,10 @@ JSBool js_cocos2dx_extension_ControlStepper_getPlusSprite(JSContext *cx, uint32_
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_getPlusSprite : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Sprite* ret = cobj->getPlusSprite();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Sprite>(cx, (cocos2d::Sprite*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -5844,8 +5060,8 @@ JSBool js_cocos2dx_extension_ControlStepper_initWithMinusSpriteAndPlusSprite(JSC
 			JSB_PRECONDITION2( arg1, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_initWithMinusSpriteAndPlusSprite : Error processing arguments");
-		bool ret = cobj->initWithMinusSpriteAndPlusSprite(arg0, arg1);
-		jsval jsret;
+		JSBool ret = cobj->initWithMinusSpriteAndPlusSprite(arg0, arg1);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5862,7 +5078,7 @@ JSBool js_cocos2dx_extension_ControlStepper_getValue(JSContext *cx, uint32_t arg
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_getValue : Invalid Native Object");
 	if (argc == 0) {
 		double ret = cobj->getValue();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -5923,10 +5139,10 @@ JSBool js_cocos2dx_extension_ControlStepper_create(JSContext *cx, uint32_t argc,
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlStepper_create : Error processing arguments");
 		cocos2d::extension::ControlStepper* ret = cocos2d::extension::ControlStepper::create(arg0, arg1);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlStepper>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlStepper>(cx, (cocos2d::extension::ControlStepper*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -5949,8 +5165,8 @@ JSBool js_cocos2dx_extension_ControlStepper_constructor(JSContext *cx, uint32_t 
 		}
 		TypeTest<cocos2d::extension::ControlStepper> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -5967,36 +5183,24 @@ JSBool js_cocos2dx_extension_ControlStepper_constructor(JSContext *cx, uint32_t 
 }
 
 
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlStepper_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlStepper_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlStepper)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlStepper_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlStepper *nobj = new cocos2d::extension::ControlStepper();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlStepper");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlStepper(JSContext *cx, JSObject *global) {
-	jsb_ControlStepper_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlStepper_class->name = "ControlStepper";
-	jsb_ControlStepper_class->addProperty = JS_PropertyStub;
-	jsb_ControlStepper_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlStepper_class->getProperty = JS_PropertyStub;
-	jsb_ControlStepper_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlStepper_class->enumerate = JS_EnumerateStub;
-	jsb_ControlStepper_class->resolve = JS_ResolveStub;
-	jsb_ControlStepper_class->convert = JS_ConvertStub;
-	jsb_ControlStepper_class->finalize = js_cocos2dx_extension_ControlStepper_finalize;
-	jsb_ControlStepper_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlStepper_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlStepper_class->name = "ControlStepper";
+	jsb_cocos2d_extension_ControlStepper_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlStepper_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlStepper_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlStepper_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlStepper_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlStepper_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlStepper_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlStepper_class->finalize = js_cocos2d_extension_ControlStepper_finalize;
+	jsb_cocos2d_extension_ControlStepper_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -6024,7 +5228,6 @@ void js_register_cocos2dx_extension_ControlStepper(JSContext *cx, JSObject *glob
 		JS_FN("initWithMinusSpriteAndPlusSprite", js_cocos2dx_extension_ControlStepper_initWithMinusSpriteAndPlusSprite, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getValue", js_cocos2dx_extension_ControlStepper_getValue, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setPlusLabel", js_cocos2dx_extension_ControlStepper_setPlusLabel, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlStepper_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -6033,10 +5236,10 @@ void js_register_cocos2dx_extension_ControlStepper(JSContext *cx, JSObject *glob
 		JS_FS_END
 	};
 
-	jsb_ControlStepper_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlStepper_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlStepper_class,
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlStepper_class,
 		js_cocos2dx_extension_ControlStepper_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -6049,20 +5252,19 @@ void js_register_cocos2dx_extension_ControlStepper(JSContext *cx, JSObject *glob
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlStepper> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlStepper_class;
-		p->proto = jsb_ControlStepper_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlStepper_class;
+		p->proto = jsb_cocos2d_extension_ControlStepper_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ControlSwitch_class;
-JSObject *jsb_ControlSwitch_prototype;
+JSClass  *jsb_cocos2d_extension_ControlSwitch_class;
+JSObject *jsb_cocos2d_extension_ControlSwitch_prototype;
 
 JSBool js_cocos2dx_extension_ControlSwitch_setEnabled(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -6130,8 +5332,8 @@ JSBool js_cocos2dx_extension_ControlSwitch_isOn(JSContext *cx, uint32_t argc, js
 	cocos2d::extension::ControlSwitch* cobj = (cocos2d::extension::ControlSwitch *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSwitch_isOn : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isOn();
-		jsval jsret;
+		JSBool ret = cobj->isOn();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6213,8 +5415,8 @@ JSBool js_cocos2dx_extension_ControlSwitch_initWithMaskSprite(JSContext *cx, uin
 				JSB_PRECONDITION2( arg5, cx, JS_FALSE, "Invalid Native Object");
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithMaskSprite(arg0, arg1, arg2, arg3, arg4, arg5);
-			jsval jsret;
+			JSBool ret = cobj->initWithMaskSprite(arg0, arg1, arg2, arg3, arg4, arg5);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -6263,8 +5465,8 @@ JSBool js_cocos2dx_extension_ControlSwitch_initWithMaskSprite(JSContext *cx, uin
 				JSB_PRECONDITION2( arg3, cx, JS_FALSE, "Invalid Native Object");
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
-			bool ret = cobj->initWithMaskSprite(arg0, arg1, arg2, arg3);
-			jsval jsret;
+			JSBool ret = cobj->initWithMaskSprite(arg0, arg1, arg2, arg3);
+			jsval jsret = JSVAL_NULL;
 			jsret = BOOLEAN_TO_JSVAL(ret);
 			JS_SET_RVAL(cx, vp, jsret);
 			return JS_TRUE;
@@ -6281,8 +5483,8 @@ JSBool js_cocos2dx_extension_ControlSwitch_hasMoved(JSContext *cx, uint32_t argc
 	cocos2d::extension::ControlSwitch* cobj = (cocos2d::extension::ControlSwitch *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ControlSwitch_hasMoved : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->hasMoved();
-		jsval jsret;
+		JSBool ret = cobj->hasMoved();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6311,7 +5513,7 @@ JSBool js_cocos2dx_extension_ControlSwitch_locationFromTouch(JSContext *cx, uint
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ControlSwitch_locationFromTouch : Error processing arguments");
 		cocos2d::Point ret = cobj->locationFromTouch(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6368,10 +5570,10 @@ JSBool js_cocos2dx_extension_ControlSwitch_create(JSContext *cx, uint32_t argc, 
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ControlSwitch* ret = cocos2d::extension::ControlSwitch::create(arg0, arg1, arg2, arg3);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSwitch>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSwitch>(cx, (cocos2d::extension::ControlSwitch*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -6445,10 +5647,10 @@ JSBool js_cocos2dx_extension_ControlSwitch_create(JSContext *cx, uint32_t argc, 
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ControlSwitch* ret = cocos2d::extension::ControlSwitch::create(arg0, arg1, arg2, arg3, arg4, arg5);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSwitch>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ControlSwitch>(cx, (cocos2d::extension::ControlSwitch*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -6471,8 +5673,8 @@ JSBool js_cocos2dx_extension_ControlSwitch_constructor(JSContext *cx, uint32_t a
 		}
 		TypeTest<cocos2d::extension::ControlSwitch> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -6489,36 +5691,24 @@ JSBool js_cocos2dx_extension_ControlSwitch_constructor(JSContext *cx, uint32_t a
 }
 
 
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
-extern JSObject *jsb_Control_prototype;
-
-void js_cocos2dx_extension_ControlSwitch_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ControlSwitch_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ControlSwitch)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ControlSwitch_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ControlSwitch *nobj = new cocos2d::extension::ControlSwitch();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ControlSwitch");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_ControlSwitch(JSContext *cx, JSObject *global) {
-	jsb_ControlSwitch_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ControlSwitch_class->name = "ControlSwitch";
-	jsb_ControlSwitch_class->addProperty = JS_PropertyStub;
-	jsb_ControlSwitch_class->delProperty = JS_DeletePropertyStub;
-	jsb_ControlSwitch_class->getProperty = JS_PropertyStub;
-	jsb_ControlSwitch_class->setProperty = JS_StrictPropertyStub;
-	jsb_ControlSwitch_class->enumerate = JS_EnumerateStub;
-	jsb_ControlSwitch_class->resolve = JS_ResolveStub;
-	jsb_ControlSwitch_class->convert = JS_ConvertStub;
-	jsb_ControlSwitch_class->finalize = js_cocos2dx_extension_ControlSwitch_finalize;
-	jsb_ControlSwitch_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ControlSwitch_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ControlSwitch_class->name = "ControlSwitch";
+	jsb_cocos2d_extension_ControlSwitch_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlSwitch_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ControlSwitch_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ControlSwitch_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ControlSwitch_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ControlSwitch_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ControlSwitch_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ControlSwitch_class->finalize = js_cocos2d_extension_ControlSwitch_finalize;
+	jsb_cocos2d_extension_ControlSwitch_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -6531,7 +5721,6 @@ void js_register_cocos2dx_extension_ControlSwitch(JSContext *cx, JSObject *globa
 		JS_FN("initWithMaskSprite", js_cocos2dx_extension_ControlSwitch_initWithMaskSprite, 4, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("hasMoved", js_cocos2dx_extension_ControlSwitch_hasMoved, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("locationFromTouch", js_cocos2dx_extension_ControlSwitch_locationFromTouch, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ControlSwitch_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -6540,10 +5729,10 @@ void js_register_cocos2dx_extension_ControlSwitch(JSContext *cx, JSObject *globa
 		JS_FS_END
 	};
 
-	jsb_ControlSwitch_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ControlSwitch_prototype = JS_InitClass(
 		cx, global,
-		jsb_Control_prototype,
-		jsb_ControlSwitch_class,
+		jsb_cocos2d_extension_Control_prototype,
+		jsb_cocos2d_extension_ControlSwitch_class,
 		js_cocos2dx_extension_ControlSwitch_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -6556,20 +5745,19 @@ void js_register_cocos2dx_extension_ControlSwitch(JSContext *cx, JSObject *globa
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ControlSwitch> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ControlSwitch_class;
-		p->proto = jsb_ControlSwitch_prototype;
-		p->parentProto = jsb_Control_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ControlSwitch_class;
+		p->proto = jsb_cocos2d_extension_ControlSwitch_prototype;
+		p->parentProto = jsb_cocos2d_extension_Control_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_ScrollView_class;
-JSObject *jsb_ScrollView_prototype;
+JSClass  *jsb_cocos2d_extension_ScrollView_class;
+JSObject *jsb_cocos2d_extension_ScrollView_prototype;
 
 JSBool js_cocos2dx_extension_ScrollView_isClippingToBounds(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -6578,8 +5766,8 @@ JSBool js_cocos2dx_extension_ScrollView_isClippingToBounds(JSContext *cx, uint32
 	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_isClippingToBounds : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isClippingToBounds();
-		jsval jsret;
+		JSBool ret = cobj->isClippingToBounds();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6659,83 +5847,6 @@ JSBool js_cocos2dx_extension_ScrollView_setZoomScaleInDuration(JSContext *cx, ui
 	JS_ReportError(cx, "js_cocos2dx_extension_ScrollView_setZoomScaleInDuration : wrong number of arguments: %d, was expecting %d", argc, 2);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_ScrollView_addChild(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-
-	JSObject *obj = NULL;
-	cocos2d::extension::ScrollView* cobj = NULL;
-	obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_addChild : Invalid Native Object");
-	do {
-		if (argc == 2) {
-			cocos2d::Node* arg0;
-			do {
-				if (!argv[0].isObject()) { ok = JS_FALSE; break; }
-				js_proxy_t *proxy;
-				JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-				proxy = jsb_get_js_proxy(tmpObj);
-				arg0 = (cocos2d::Node*)(proxy ? proxy->ptr : NULL);
-				JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
-			} while (0);
-			if (!ok) { ok = JS_TRUE; break; }
-			int arg1;
-			ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
-			if (!ok) { ok = JS_TRUE; break; }
-			cobj->addChild(arg0, arg1);
-			JS_SET_RVAL(cx, vp, JSVAL_VOID);
-			return JS_TRUE;
-		}
-	} while(0);
-
-	do {
-		if (argc == 3) {
-			cocos2d::Node* arg0;
-			do {
-				if (!argv[0].isObject()) { ok = JS_FALSE; break; }
-				js_proxy_t *proxy;
-				JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-				proxy = jsb_get_js_proxy(tmpObj);
-				arg0 = (cocos2d::Node*)(proxy ? proxy->ptr : NULL);
-				JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
-			} while (0);
-			if (!ok) { ok = JS_TRUE; break; }
-			int arg1;
-			ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
-			if (!ok) { ok = JS_TRUE; break; }
-			int arg2;
-			ok &= jsval_to_int32(cx, argv[2], (int32_t *)&arg2);
-			if (!ok) { ok = JS_TRUE; break; }
-			cobj->addChild(arg0, arg1, arg2);
-			JS_SET_RVAL(cx, vp, JSVAL_VOID);
-			return JS_TRUE;
-		}
-	} while(0);
-
-	do {
-		if (argc == 1) {
-			cocos2d::Node* arg0;
-			do {
-				if (!argv[0].isObject()) { ok = JS_FALSE; break; }
-				js_proxy_t *proxy;
-				JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-				proxy = jsb_get_js_proxy(tmpObj);
-				arg0 = (cocos2d::Node*)(proxy ? proxy->ptr : NULL);
-				JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
-			} while (0);
-			if (!ok) { ok = JS_TRUE; break; }
-			cobj->addChild(arg0);
-			JS_SET_RVAL(cx, vp, JSVAL_VOID);
-			return JS_TRUE;
-		}
-	} while(0);
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ScrollView_addChild : wrong number of arguments");
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_ScrollView_setBounceable(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -6764,7 +5875,7 @@ JSBool js_cocos2dx_extension_ScrollView_getDirection(JSContext *cx, uint32_t arg
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_getDirection : Invalid Native Object");
 	if (argc == 0) {
 		int ret = (int)cobj->getDirection();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = int32_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6781,10 +5892,10 @@ JSBool js_cocos2dx_extension_ScrollView_getContainer(JSContext *cx, uint32_t arg
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_getContainer : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Node* ret = cobj->getContainer();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Node>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::Node>(cx, (cocos2d::Node*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -6804,8 +5915,8 @@ JSBool js_cocos2dx_extension_ScrollView_getZoomScale(JSContext *cx, uint32_t arg
 	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_getZoomScale : Invalid Native Object");
 	if (argc == 0) {
-		float ret = cobj->getZoomScale();
-		jsval jsret;
+		double ret = cobj->getZoomScale();
+		jsval jsret = JSVAL_NULL;
 		jsret = DOUBLE_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6841,8 +5952,8 @@ JSBool js_cocos2dx_extension_ScrollView_initWithViewSize(JSContext *cx, uint32_t
 		cocos2d::Size arg0;
 		ok &= jsval_to_ccsize(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_initWithViewSize : Error processing arguments");
-		bool ret = cobj->initWithViewSize(arg0);
-		jsval jsret;
+		JSBool ret = cobj->initWithViewSize(arg0);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6860,8 +5971,8 @@ JSBool js_cocos2dx_extension_ScrollView_initWithViewSize(JSContext *cx, uint32_t
 			JSB_PRECONDITION2( arg1, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_initWithViewSize : Error processing arguments");
-		bool ret = cobj->initWithViewSize(arg0, arg1);
-		jsval jsret;
+		JSBool ret = cobj->initWithViewSize(arg0, arg1);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6924,8 +6035,8 @@ JSBool js_cocos2dx_extension_ScrollView_init(JSContext *cx, uint32_t argc, jsval
 	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_init : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->init();
-		jsval jsret;
+		JSBool ret = cobj->init();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6971,8 +6082,8 @@ JSBool js_cocos2dx_extension_ScrollView_isDragging(JSContext *cx, uint32_t argc,
 	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_isDragging : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isDragging();
-		jsval jsret;
+		JSBool ret = cobj->isDragging();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -6988,8 +6099,8 @@ JSBool js_cocos2dx_extension_ScrollView_isTouchEnabled(JSContext *cx, uint32_t a
 	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_isTouchEnabled : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isTouchEnabled();
-		jsval jsret;
+		JSBool ret = cobj->isTouchEnabled();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7005,31 +6116,14 @@ JSBool js_cocos2dx_extension_ScrollView_isBounceable(JSContext *cx, uint32_t arg
 	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_isBounceable : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isBounceable();
-		jsval jsret;
+		JSBool ret = cobj->isBounceable();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_ScrollView_isBounceable : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ScrollView_getContentSize(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_getContentSize : Invalid Native Object");
-	if (argc == 0) {
-		cocos2d::Size ret = cobj->getContentSize();
-		jsval jsret;
-		jsret = ccsize_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ScrollView_getContentSize : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ScrollView_setTouchEnabled(JSContext *cx, uint32_t argc, jsval *vp)
@@ -7060,7 +6154,7 @@ JSBool js_cocos2dx_extension_ScrollView_getContentOffset(JSContext *cx, uint32_t
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_getContentOffset : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Point ret = cobj->getContentOffset();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7144,7 +6238,7 @@ JSBool js_cocos2dx_extension_ScrollView_getViewSize(JSContext *cx, uint32_t argc
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_getViewSize : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Size ret = cobj->getViewSize();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccsize_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7161,33 +6255,13 @@ JSBool js_cocos2dx_extension_ScrollView_maxContainerOffset(JSContext *cx, uint32
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_maxContainerOffset : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Point ret = cobj->maxContainerOffset();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_ScrollView_maxContainerOffset : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_ScrollView_setContentSize(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_setContentSize : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Size arg0;
-		ok &= jsval_to_ccsize(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_setContentSize : Error processing arguments");
-		cobj->setContentSize(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_ScrollView_setContentSize : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_ScrollView_isTouchMoved(JSContext *cx, uint32_t argc, jsval *vp)
@@ -7197,8 +6271,8 @@ JSBool js_cocos2dx_extension_ScrollView_isTouchMoved(JSContext *cx, uint32_t arg
 	cocos2d::extension::ScrollView* cobj = (cocos2d::extension::ScrollView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_isTouchMoved : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->isTouchMoved();
-		jsval jsret;
+		JSBool ret = cobj->isTouchMoved();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7226,8 +6300,8 @@ JSBool js_cocos2dx_extension_ScrollView_isNodeVisible(JSContext *cx, uint32_t ar
 			JSB_PRECONDITION2( arg0, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_isNodeVisible : Error processing arguments");
-		bool ret = cobj->isNodeVisible(arg0);
-		jsval jsret;
+		JSBool ret = cobj->isNodeVisible(arg0);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7244,7 +6318,7 @@ JSBool js_cocos2dx_extension_ScrollView_minContainerOffset(JSContext *cx, uint32
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_ScrollView_minContainerOffset : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::Point ret = cobj->minContainerOffset();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = ccpoint_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7300,10 +6374,10 @@ JSBool js_cocos2dx_extension_ScrollView_create(JSContext *cx, uint32_t argc, jsv
 	do {
 		if (argc == 0) {
 			cocos2d::extension::ScrollView* ret = cocos2d::extension::ScrollView::create();
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ScrollView>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ScrollView>(cx, (cocos2d::extension::ScrollView*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -7320,10 +6394,10 @@ JSBool js_cocos2dx_extension_ScrollView_create(JSContext *cx, uint32_t argc, jsv
 			ok &= jsval_to_ccsize(cx, argv[0], &arg0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ScrollView* ret = cocos2d::extension::ScrollView::create(arg0);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ScrollView>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ScrollView>(cx, (cocos2d::extension::ScrollView*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -7349,10 +6423,10 @@ JSBool js_cocos2dx_extension_ScrollView_create(JSContext *cx, uint32_t argc, jsv
 			} while (0);
 			if (!ok) { ok = JS_TRUE; break; }
 			cocos2d::extension::ScrollView* ret = cocos2d::extension::ScrollView::create(arg0, arg1);
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			do {
 				if (ret) {
-					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ScrollView>(cx, ret);
+					js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::ScrollView>(cx, (cocos2d::extension::ScrollView*)ret);
 					jsret = OBJECT_TO_JSVAL(proxy->obj);
 				} else {
 					jsret = JSVAL_NULL;
@@ -7375,8 +6449,8 @@ JSBool js_cocos2dx_extension_ScrollView_constructor(JSContext *cx, uint32_t argc
 		}
 		TypeTest<cocos2d::extension::ScrollView> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -7393,36 +6467,33 @@ JSBool js_cocos2dx_extension_ScrollView_constructor(JSContext *cx, uint32_t argc
 }
 
 
+extern JSObject *jsb_cocos2d_Layer_prototype;
 
-extern JSObject *jsb_Layer_prototype;
-
-void js_cocos2dx_extension_ScrollView_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_ScrollView_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (ScrollView)", obj);
 }
 
-static JSBool js_cocos2dx_extension_ScrollView_ctor(JSContext *cx, uint32_t argc, jsval *vp)
+static JSBool js_cocos2d_extension_ScrollView_ctor(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::ScrollView *nobj = new cocos2d::extension::ScrollView();
+    cocos2d::extension::ScrollView *nobj = cocos2d::extension::ScrollView::create();
     js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
     JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::ScrollView");
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
-
 void js_register_cocos2dx_extension_ScrollView(JSContext *cx, JSObject *global) {
-	jsb_ScrollView_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_ScrollView_class->name = "ScrollView";
-	jsb_ScrollView_class->addProperty = JS_PropertyStub;
-	jsb_ScrollView_class->delProperty = JS_DeletePropertyStub;
-	jsb_ScrollView_class->getProperty = JS_PropertyStub;
-	jsb_ScrollView_class->setProperty = JS_StrictPropertyStub;
-	jsb_ScrollView_class->enumerate = JS_EnumerateStub;
-	jsb_ScrollView_class->resolve = JS_ResolveStub;
-	jsb_ScrollView_class->convert = JS_ConvertStub;
-	jsb_ScrollView_class->finalize = js_cocos2dx_extension_ScrollView_finalize;
-	jsb_ScrollView_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_ScrollView_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_ScrollView_class->name = "ScrollView";
+	jsb_cocos2d_extension_ScrollView_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ScrollView_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_ScrollView_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_ScrollView_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_ScrollView_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_ScrollView_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_ScrollView_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_ScrollView_class->finalize = js_cocos2d_extension_ScrollView_finalize;
+	jsb_cocos2d_extension_ScrollView_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -7433,7 +6504,6 @@ void js_register_cocos2dx_extension_ScrollView(JSContext *cx, JSObject *global) 
 		JS_FN("setContainer", js_cocos2dx_extension_ScrollView_setContainer, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setContentOffsetInDuration", js_cocos2dx_extension_ScrollView_setContentOffsetInDuration, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setZoomScaleInDuration", js_cocos2dx_extension_ScrollView_setZoomScaleInDuration, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("addChild", js_cocos2dx_extension_ScrollView_addChild, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setBounceable", js_cocos2dx_extension_ScrollView_setBounceable, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getDirection", js_cocos2dx_extension_ScrollView_getDirection, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getContainer", js_cocos2dx_extension_ScrollView_getContainer, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
@@ -7447,7 +6517,6 @@ void js_register_cocos2dx_extension_ScrollView(JSContext *cx, JSObject *global) 
 		JS_FN("isDragging", js_cocos2dx_extension_ScrollView_isDragging, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isTouchEnabled", js_cocos2dx_extension_ScrollView_isTouchEnabled, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isBounceable", js_cocos2dx_extension_ScrollView_isBounceable, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getContentSize", js_cocos2dx_extension_ScrollView_getContentSize, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setTouchEnabled", js_cocos2dx_extension_ScrollView_setTouchEnabled, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getContentOffset", js_cocos2dx_extension_ScrollView_getContentOffset, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("resume", js_cocos2dx_extension_ScrollView_resume, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
@@ -7455,12 +6524,11 @@ void js_register_cocos2dx_extension_ScrollView(JSContext *cx, JSObject *global) 
 		JS_FN("setViewSize", js_cocos2dx_extension_ScrollView_setViewSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getViewSize", js_cocos2dx_extension_ScrollView_getViewSize, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("maxContainerOffset", js_cocos2dx_extension_ScrollView_maxContainerOffset, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setContentSize", js_cocos2dx_extension_ScrollView_setContentSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isTouchMoved", js_cocos2dx_extension_ScrollView_isTouchMoved, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("isNodeVisible", js_cocos2dx_extension_ScrollView_isNodeVisible, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("minContainerOffset", js_cocos2dx_extension_ScrollView_minContainerOffset, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setZoomScale", js_cocos2dx_extension_ScrollView_setZoomScale, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_ScrollView_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+        JS_FN("ctor", js_cocos2d_extension_ScrollView_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -7469,10 +6537,10 @@ void js_register_cocos2dx_extension_ScrollView(JSContext *cx, JSObject *global) 
 		JS_FS_END
 	};
 
-	jsb_ScrollView_prototype = JS_InitClass(
+	jsb_cocos2d_extension_ScrollView_prototype = JS_InitClass(
 		cx, global,
-		jsb_Layer_prototype,
-		jsb_ScrollView_class,
+		jsb_cocos2d_Layer_prototype,
+		jsb_cocos2d_extension_ScrollView_class,
 		js_cocos2dx_extension_ScrollView_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -7485,20 +6553,19 @@ void js_register_cocos2dx_extension_ScrollView(JSContext *cx, JSObject *global) 
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::ScrollView> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_ScrollView_class;
-		p->proto = jsb_ScrollView_prototype;
-		p->parentProto = jsb_Layer_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_ScrollView_class;
+		p->proto = jsb_cocos2d_extension_ScrollView_prototype;
+		p->parentProto = jsb_cocos2d_Layer_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_TableViewCell_class;
-JSObject *jsb_TableViewCell_prototype;
+JSClass  *jsb_cocos2d_extension_TableViewCell_class;
+JSObject *jsb_cocos2d_extension_TableViewCell_prototype;
 
 JSBool js_cocos2dx_extension_TableViewCell_reset(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -7515,6 +6582,23 @@ JSBool js_cocos2dx_extension_TableViewCell_reset(JSContext *cx, uint32_t argc, j
 	JS_ReportError(cx, "js_cocos2dx_extension_TableViewCell_reset : wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
+JSBool js_cocos2dx_extension_TableViewCell_getIdx(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	cocos2d::extension::TableViewCell* cobj = (cocos2d::extension::TableViewCell *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableViewCell_getIdx : Invalid Native Object");
+	if (argc == 0) {
+		ssize_t ret = cobj->getIdx();
+		jsval jsret = JSVAL_NULL;
+		jsret = ssize_to_jsval(cx, ret);
+		JS_SET_RVAL(cx, vp, jsret);
+		return JS_TRUE;
+	}
+
+	JS_ReportError(cx, "js_cocos2dx_extension_TableViewCell_getIdx : wrong number of arguments: %d, was expecting %d", argc, 0);
+	return JS_FALSE;
+}
 JSBool js_cocos2dx_extension_TableViewCell_setIdx(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -7524,8 +6608,8 @@ JSBool js_cocos2dx_extension_TableViewCell_setIdx(JSContext *cx, uint32_t argc, 
 	cocos2d::extension::TableViewCell* cobj = (cocos2d::extension::TableViewCell *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableViewCell_setIdx : Invalid Native Object");
 	if (argc == 1) {
-		long arg0;
-		ok &= jsval_to_long(cx, argv[0], &arg0);
+		ssize_t arg0;
+		ok &= jsval_to_ssize(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableViewCell_setIdx : Error processing arguments");
 		cobj->setIdx(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -7535,60 +6619,26 @@ JSBool js_cocos2dx_extension_TableViewCell_setIdx(JSContext *cx, uint32_t argc, 
 	JS_ReportError(cx, "js_cocos2dx_extension_TableViewCell_setIdx : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_TableViewCell_setObjectID(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_extension_TableViewCell_create(JSContext *cx, uint32_t argc, jsval *vp)
 {
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::TableViewCell* cobj = (cocos2d::extension::TableViewCell *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableViewCell_setObjectID : Invalid Native Object");
-	if (argc == 1) {
-		long arg0;
-		ok &= jsval_to_long(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableViewCell_setObjectID : Error processing arguments");
-		cobj->setObjectID(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_TableViewCell_setObjectID : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_TableViewCell_getObjectID(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::TableViewCell* cobj = (cocos2d::extension::TableViewCell *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableViewCell_getObjectID : Invalid Native Object");
 	if (argc == 0) {
-		long ret = cobj->getObjectID();
-		jsval jsret;
-		jsret = long_to_jsval(cx, ret);
+		cocos2d::extension::TableViewCell* ret = cocos2d::extension::TableViewCell::create();
+		jsval jsret = JSVAL_NULL;
+		do {
+		if (ret) {
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::TableViewCell>(cx, (cocos2d::extension::TableViewCell*)ret);
+			jsret = OBJECT_TO_JSVAL(proxy->obj);
+		} else {
+			jsret = JSVAL_NULL;
+		}
+	} while (0);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_TableViewCell_getObjectID : wrong number of arguments: %d, was expecting %d", argc, 0);
+	JS_ReportError(cx, "js_cocos2dx_extension_TableViewCell_create : wrong number of arguments");
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_TableViewCell_getIdx(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::TableViewCell* cobj = (cocos2d::extension::TableViewCell *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableViewCell_getIdx : Invalid Native Object");
-	if (argc == 0) {
-		long ret = cobj->getIdx();
-		jsval jsret;
-		jsret = long_to_jsval(cx, ret);
-		JS_SET_RVAL(cx, vp, jsret);
-		return JS_TRUE;
-	}
 
-	JS_ReportError(cx, "js_cocos2dx_extension_TableViewCell_getIdx : wrong number of arguments: %d, was expecting %d", argc, 0);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_TableViewCell_constructor(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	if (argc == 0) {
@@ -7599,8 +6649,8 @@ JSBool js_cocos2dx_extension_TableViewCell_constructor(JSContext *cx, uint32_t a
 		}
 		TypeTest<cocos2d::extension::TableViewCell> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -7617,36 +6667,33 @@ JSBool js_cocos2dx_extension_TableViewCell_constructor(JSContext *cx, uint32_t a
 }
 
 
+extern JSObject *jsb_cocos2d_Node_prototype;
 
-extern JSObject *jsb_Node_prototype;
-
-void js_cocos2dx_extension_TableViewCell_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_TableViewCell_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (TableViewCell)", obj);
 }
 
-static JSBool js_cocos2dx_extension_TableViewCell_ctor(JSContext *cx, uint32_t argc, jsval *vp)
+static JSBool js_cocos2d_extension_TableViewCell_ctor(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::TableViewCell *nobj = new cocos2d::extension::TableViewCell();
+    cocos2d::extension::TableViewCell *nobj = cocos2d::extension::TableViewCell::create();
     js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
     JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::TableViewCell");
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
-
 void js_register_cocos2dx_extension_TableViewCell(JSContext *cx, JSObject *global) {
-	jsb_TableViewCell_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_TableViewCell_class->name = "TableViewCell";
-	jsb_TableViewCell_class->addProperty = JS_PropertyStub;
-	jsb_TableViewCell_class->delProperty = JS_DeletePropertyStub;
-	jsb_TableViewCell_class->getProperty = JS_PropertyStub;
-	jsb_TableViewCell_class->setProperty = JS_StrictPropertyStub;
-	jsb_TableViewCell_class->enumerate = JS_EnumerateStub;
-	jsb_TableViewCell_class->resolve = JS_ResolveStub;
-	jsb_TableViewCell_class->convert = JS_ConvertStub;
-	jsb_TableViewCell_class->finalize = js_cocos2dx_extension_TableViewCell_finalize;
-	jsb_TableViewCell_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_TableViewCell_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_TableViewCell_class->name = "TableViewCell";
+	jsb_cocos2d_extension_TableViewCell_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_TableViewCell_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_TableViewCell_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_TableViewCell_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_TableViewCell_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_TableViewCell_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_TableViewCell_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_TableViewCell_class->finalize = js_cocos2d_extension_TableViewCell_finalize;
+	jsb_cocos2d_extension_TableViewCell_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -7654,20 +6701,21 @@ void js_register_cocos2dx_extension_TableViewCell(JSContext *cx, JSObject *globa
 
 	static JSFunctionSpec funcs[] = {
 		JS_FN("reset", js_cocos2dx_extension_TableViewCell_reset, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setIdx", js_cocos2dx_extension_TableViewCell_setIdx, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setObjectID", js_cocos2dx_extension_TableViewCell_setObjectID, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("getObjectID", js_cocos2dx_extension_TableViewCell_getObjectID, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getIdx", js_cocos2dx_extension_TableViewCell_getIdx, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_TableViewCell_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("setIdx", js_cocos2dx_extension_TableViewCell_setIdx, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+        JS_FN("ctor", js_cocos2d_extension_TableViewCell_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
-	JSFunctionSpec *st_funcs = NULL;
+	static JSFunctionSpec st_funcs[] = {
+		JS_FN("create", js_cocos2dx_extension_TableViewCell_create, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FS_END
+	};
 
-	jsb_TableViewCell_prototype = JS_InitClass(
+	jsb_cocos2d_extension_TableViewCell_prototype = JS_InitClass(
 		cx, global,
-		jsb_Node_prototype,
-		jsb_TableViewCell_class,
+		jsb_cocos2d_Node_prototype,
+		jsb_cocos2d_extension_TableViewCell_class,
 		js_cocos2dx_extension_TableViewCell_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -7680,20 +6728,19 @@ void js_register_cocos2dx_extension_TableViewCell(JSContext *cx, JSObject *globa
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::TableViewCell> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_TableViewCell_class;
-		p->proto = jsb_TableViewCell_prototype;
-		p->parentProto = jsb_Node_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_TableViewCell_class;
+		p->proto = jsb_cocos2d_extension_TableViewCell_prototype;
+		p->parentProto = jsb_cocos2d_Node_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_TableView_class;
-JSObject *jsb_TableView_prototype;
+JSClass  *jsb_cocos2d_extension_TableView_class;
+JSObject *jsb_cocos2d_extension_TableView_prototype;
 
 JSBool js_cocos2dx_extension_TableView_updateCellAtIndex(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -7704,8 +6751,8 @@ JSBool js_cocos2dx_extension_TableView_updateCellAtIndex(JSContext *cx, uint32_t
 	cocos2d::extension::TableView* cobj = (cocos2d::extension::TableView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableView_updateCellAtIndex : Invalid Native Object");
 	if (argc == 1) {
-		long arg0;
-		ok &= jsval_to_long(cx, argv[0], &arg0);
+		ssize_t arg0;
+		ok &= jsval_to_ssize(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableView_updateCellAtIndex : Error processing arguments");
 		cobj->updateCellAtIndex(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -7785,7 +6832,7 @@ JSBool js_cocos2dx_extension_TableView_getVerticalFillOrder(JSContext *cx, uint3
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableView_getVerticalFillOrder : Invalid Native Object");
 	if (argc == 0) {
 		int ret = (int)cobj->getVerticalFillOrder();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = int32_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7803,8 +6850,8 @@ JSBool js_cocos2dx_extension_TableView_removeCellAtIndex(JSContext *cx, uint32_t
 	cocos2d::extension::TableView* cobj = (cocos2d::extension::TableView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableView_removeCellAtIndex : Invalid Native Object");
 	if (argc == 1) {
-		long arg0;
-		ok &= jsval_to_long(cx, argv[0], &arg0);
+		ssize_t arg0;
+		ok &= jsval_to_ssize(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableView_removeCellAtIndex : Error processing arguments");
 		cobj->removeCellAtIndex(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -7826,8 +6873,8 @@ JSBool js_cocos2dx_extension_TableView_initWithViewSize(JSContext *cx, uint32_t 
 		cocos2d::Size arg0;
 		ok &= jsval_to_ccsize(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableView_initWithViewSize : Error processing arguments");
-		bool ret = cobj->initWithViewSize(arg0);
-		jsval jsret;
+		JSBool ret = cobj->initWithViewSize(arg0);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7845,8 +6892,8 @@ JSBool js_cocos2dx_extension_TableView_initWithViewSize(JSContext *cx, uint32_t 
 			JSB_PRECONDITION2( arg1, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableView_initWithViewSize : Error processing arguments");
-		bool ret = cobj->initWithViewSize(arg0, arg1);
-		jsval jsret;
+		JSBool ret = cobj->initWithViewSize(arg0, arg1);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -7906,8 +6953,8 @@ JSBool js_cocos2dx_extension_TableView_insertCellAtIndex(JSContext *cx, uint32_t
 	cocos2d::extension::TableView* cobj = (cocos2d::extension::TableView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableView_insertCellAtIndex : Invalid Native Object");
 	if (argc == 1) {
-		long arg0;
-		ok &= jsval_to_long(cx, argv[0], &arg0);
+		ssize_t arg0;
+		ok &= jsval_to_ssize(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableView_insertCellAtIndex : Error processing arguments");
 		cobj->insertCellAtIndex(arg0);
 		JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -7926,14 +6973,14 @@ JSBool js_cocos2dx_extension_TableView_cellAtIndex(JSContext *cx, uint32_t argc,
 	cocos2d::extension::TableView* cobj = (cocos2d::extension::TableView *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableView_cellAtIndex : Invalid Native Object");
 	if (argc == 1) {
-		long arg0;
-		ok &= jsval_to_long(cx, argv[0], &arg0);
+		ssize_t arg0;
+		ok &= jsval_to_ssize(cx, argv[0], &arg0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_TableView_cellAtIndex : Error processing arguments");
 		cocos2d::extension::TableViewCell* ret = cobj->cellAtIndex(arg0);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::TableViewCell>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::TableViewCell>(cx, (cocos2d::extension::TableViewCell*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -7954,10 +7001,10 @@ JSBool js_cocos2dx_extension_TableView_dequeueCell(JSContext *cx, uint32_t argc,
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_TableView_dequeueCell : Invalid Native Object");
 	if (argc == 0) {
 		cocos2d::extension::TableViewCell* ret = cobj->dequeueCell();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 			if (ret) {
-				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::TableViewCell>(cx, ret);
+				js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::TableViewCell>(cx, (cocos2d::extension::TableViewCell*)ret);
 				jsret = OBJECT_TO_JSVAL(proxy->obj);
 			} else {
 				jsret = JSVAL_NULL;
@@ -7980,8 +7027,8 @@ JSBool js_cocos2dx_extension_TableView_constructor(JSContext *cx, uint32_t argc,
 		}
 		TypeTest<cocos2d::extension::TableView> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -7998,36 +7045,33 @@ JSBool js_cocos2dx_extension_TableView_constructor(JSContext *cx, uint32_t argc,
 }
 
 
+extern JSObject *jsb_cocos2d_extension_ScrollView_prototype;
 
-extern JSObject *jsb_ScrollView_prototype;
-
-void js_cocos2dx_extension_TableView_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_TableView_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (TableView)", obj);
 }
 
-static JSBool js_cocos2dx_extension_TableView_ctor(JSContext *cx, uint32_t argc, jsval *vp)
+static JSBool js_cocos2d_extension_TableView_ctor(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::TableView *nobj = new cocos2d::extension::TableView();
+    cocos2d::extension::TableView *nobj = cocos2d::extension::TableView::create();
     js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
     JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::TableView");
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
-
 void js_register_cocos2dx_extension_TableView(JSContext *cx, JSObject *global) {
-	jsb_TableView_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_TableView_class->name = "TableView";
-	jsb_TableView_class->addProperty = JS_PropertyStub;
-	jsb_TableView_class->delProperty = JS_DeletePropertyStub;
-	jsb_TableView_class->getProperty = JS_PropertyStub;
-	jsb_TableView_class->setProperty = JS_StrictPropertyStub;
-	jsb_TableView_class->enumerate = JS_EnumerateStub;
-	jsb_TableView_class->resolve = JS_ResolveStub;
-	jsb_TableView_class->convert = JS_ConvertStub;
-	jsb_TableView_class->finalize = js_cocos2dx_extension_TableView_finalize;
-	jsb_TableView_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_TableView_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_TableView_class->name = "TableView";
+	jsb_cocos2d_extension_TableView_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_TableView_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_TableView_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_TableView_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_TableView_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_TableView_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_TableView_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_TableView_class->finalize = js_cocos2d_extension_TableView_finalize;
+	jsb_cocos2d_extension_TableView_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -8046,16 +7090,16 @@ void js_register_cocos2dx_extension_TableView(JSContext *cx, JSObject *global) {
 		JS_FN("insertCellAtIndex", js_cocos2dx_extension_TableView_insertCellAtIndex, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("cellAtIndex", js_cocos2dx_extension_TableView_cellAtIndex, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("dequeueCell", js_cocos2dx_extension_TableView_dequeueCell, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_TableView_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+        JS_FN("ctor", js_cocos2d_extension_TableView_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
 	JSFunctionSpec *st_funcs = NULL;
 
-	jsb_TableView_prototype = JS_InitClass(
+	jsb_cocos2d_extension_TableView_prototype = JS_InitClass(
 		cx, global,
-		jsb_ScrollView_prototype,
-		jsb_TableView_class,
+		jsb_cocos2d_extension_ScrollView_prototype,
+		jsb_cocos2d_extension_TableView_class,
 		js_cocos2dx_extension_TableView_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -8068,41 +7112,20 @@ void js_register_cocos2dx_extension_TableView(JSContext *cx, JSObject *global) {
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::TableView> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_TableView_class;
-		p->proto = jsb_TableView_prototype;
-		p->parentProto = jsb_ScrollView_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_TableView_class;
+		p->proto = jsb_cocos2d_extension_TableView_prototype;
+		p->parentProto = jsb_cocos2d_extension_ScrollView_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
+JSClass  *jsb_cocos2d_extension_EditBox_class;
+JSObject *jsb_cocos2d_extension_EditBox_prototype;
 
-JSClass  *jsb_EditBox_class;
-JSObject *jsb_EditBox_prototype;
-
-JSBool js_cocos2dx_extension_EditBox_setAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::EditBox* cobj = (cocos2d::extension::EditBox *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setAnchorPoint : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Point arg0;
-		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setAnchorPoint : Error processing arguments");
-		cobj->setAnchorPoint(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_EditBox_setAnchorPoint : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_EditBox_getText(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -8111,7 +7134,7 @@ JSBool js_cocos2dx_extension_EditBox_getText(JSContext *cx, uint32_t argc, jsval
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_getText : Invalid Native Object");
 	if (argc == 0) {
 		const char* ret = cobj->getText();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = c_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8148,7 +7171,7 @@ JSBool js_cocos2dx_extension_EditBox_getPlaceHolder(JSContext *cx, uint32_t argc
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_getPlaceHolder : Invalid Native Object");
 	if (argc == 0) {
 		const char* ret = cobj->getPlaceHolder();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = c_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8320,8 +7343,8 @@ JSBool js_cocos2dx_extension_EditBox_initWithSizeAndBackgroundSprite(JSContext *
 			JSB_PRECONDITION2( arg1, cx, JS_FALSE, "Invalid Native Object");
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_initWithSizeAndBackgroundSprite : Error processing arguments");
-		bool ret = cobj->initWithSizeAndBackgroundSprite(arg0, arg1);
-		jsval jsret;
+		JSBool ret = cobj->initWithSizeAndBackgroundSprite(arg0, arg1);
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8348,26 +7371,6 @@ JSBool js_cocos2dx_extension_EditBox_setPlaceHolder(JSContext *cx, uint32_t argc
 	}
 
 	JS_ReportError(cx, "js_cocos2dx_extension_EditBox_setPlaceHolder : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-JSBool js_cocos2dx_extension_EditBox_setPosition(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::EditBox* cobj = (cocos2d::extension::EditBox *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setPosition : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Point arg0;
-		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setPosition : Error processing arguments");
-		cobj->setPosition(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_EditBox_setPosition : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 JSBool js_cocos2dx_extension_EditBox_setReturnType(JSContext *cx, uint32_t argc, jsval *vp)
@@ -8418,7 +7421,7 @@ JSBool js_cocos2dx_extension_EditBox_getMaxLength(JSContext *cx, uint32_t argc, 
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_getMaxLength : Invalid Native Object");
 	if (argc == 0) {
 		int ret = cobj->getMaxLength();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = int32_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8467,26 +7470,6 @@ JSBool js_cocos2dx_extension_EditBox_setMaxLength(JSContext *cx, uint32_t argc, 
 	JS_ReportError(cx, "js_cocos2dx_extension_EditBox_setMaxLength : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_EditBox_setContentSize(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::EditBox* cobj = (cocos2d::extension::EditBox *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setContentSize : Invalid Native Object");
-	if (argc == 1) {
-		cocos2d::Size arg0;
-		ok &= jsval_to_ccsize(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setContentSize : Error processing arguments");
-		cobj->setContentSize(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_EditBox_setContentSize : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_EditBox_setFont(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -8509,26 +7492,6 @@ JSBool js_cocos2dx_extension_EditBox_setFont(JSContext *cx, uint32_t argc, jsval
 	JS_ReportError(cx, "js_cocos2dx_extension_EditBox_setFont : wrong number of arguments: %d, was expecting %d", argc, 2);
 	return JS_FALSE;
 }
-JSBool js_cocos2dx_extension_EditBox_setVisible(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSBool ok = JS_TRUE;
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy = jsb_get_js_proxy(obj);
-	cocos2d::extension::EditBox* cobj = (cocos2d::extension::EditBox *)(proxy ? proxy->ptr : NULL);
-	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setVisible : Invalid Native Object");
-	if (argc == 1) {
-		JSBool arg0;
-		ok &= JS_ValueToBoolean(cx, argv[0], &arg0);
-		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_setVisible : Error processing arguments");
-		cobj->setVisible(arg0);
-		JS_SET_RVAL(cx, vp, JSVAL_VOID);
-		return JS_TRUE;
-	}
-
-	JS_ReportError(cx, "js_cocos2dx_extension_EditBox_setVisible : wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
 JSBool js_cocos2dx_extension_EditBox_create(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
@@ -8547,10 +7510,10 @@ JSBool js_cocos2dx_extension_EditBox_create(JSContext *cx, uint32_t argc, jsval 
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_create : Error processing arguments");
 		cocos2d::extension::EditBox* ret = cocos2d::extension::EditBox::create(arg0, arg1);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::EditBox>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::EditBox>(cx, (cocos2d::extension::EditBox*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -8582,10 +7545,10 @@ JSBool js_cocos2dx_extension_EditBox_create(JSContext *cx, uint32_t argc, jsval 
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_create : Error processing arguments");
 		cocos2d::extension::EditBox* ret = cocos2d::extension::EditBox::create(arg0, arg1, arg2);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::EditBox>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::EditBox>(cx, (cocos2d::extension::EditBox*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -8626,10 +7589,10 @@ JSBool js_cocos2dx_extension_EditBox_create(JSContext *cx, uint32_t argc, jsval 
 		} while (0);
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_EditBox_create : Error processing arguments");
 		cocos2d::extension::EditBox* ret = cocos2d::extension::EditBox::create(arg0, arg1, arg2, arg3);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::EditBox>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::EditBox>(cx, (cocos2d::extension::EditBox*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -8652,8 +7615,8 @@ JSBool js_cocos2dx_extension_EditBox_constructor(JSContext *cx, uint32_t argc, j
 		}
 		TypeTest<cocos2d::extension::EditBox> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -8670,43 +7633,30 @@ JSBool js_cocos2dx_extension_EditBox_constructor(JSContext *cx, uint32_t argc, j
 }
 
 
+extern JSObject *jsb_cocos2d_extension_ControlButton_prototype;
 
-extern JSObject *jsb_ControlButton_prototype;
-
-void js_cocos2dx_extension_EditBox_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_EditBox_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (EditBox)", obj);
 }
 
-static JSBool js_cocos2dx_extension_EditBox_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::EditBox *nobj = new cocos2d::extension::EditBox();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::EditBox");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_EditBox(JSContext *cx, JSObject *global) {
-	jsb_EditBox_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_EditBox_class->name = "EditBox";
-	jsb_EditBox_class->addProperty = JS_PropertyStub;
-	jsb_EditBox_class->delProperty = JS_DeletePropertyStub;
-	jsb_EditBox_class->getProperty = JS_PropertyStub;
-	jsb_EditBox_class->setProperty = JS_StrictPropertyStub;
-	jsb_EditBox_class->enumerate = JS_EnumerateStub;
-	jsb_EditBox_class->resolve = JS_ResolveStub;
-	jsb_EditBox_class->convert = JS_ConvertStub;
-	jsb_EditBox_class->finalize = js_cocos2dx_extension_EditBox_finalize;
-	jsb_EditBox_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_EditBox_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_EditBox_class->name = "EditBox";
+	jsb_cocos2d_extension_EditBox_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_EditBox_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_EditBox_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_EditBox_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_EditBox_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_EditBox_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_EditBox_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_EditBox_class->finalize = js_cocos2d_extension_EditBox_finalize;
+	jsb_cocos2d_extension_EditBox_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
 	};
 
 	static JSFunctionSpec funcs[] = {
-		JS_FN("setAnchorPoint", js_cocos2dx_extension_EditBox_setAnchorPoint, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getText", js_cocos2dx_extension_EditBox_getText, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setPlaceholderFontName", js_cocos2dx_extension_EditBox_setPlaceholderFontName, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getPlaceHolder", js_cocos2dx_extension_EditBox_getPlaceHolder, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
@@ -8719,16 +7669,12 @@ void js_register_cocos2dx_extension_EditBox(JSContext *cx, JSObject *global) {
 		JS_FN("setFontSize", js_cocos2dx_extension_EditBox_setFontSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("initWithSizeAndBackgroundSprite", js_cocos2dx_extension_EditBox_initWithSizeAndBackgroundSprite, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setPlaceHolder", js_cocos2dx_extension_EditBox_setPlaceHolder, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setPosition", js_cocos2dx_extension_EditBox_setPosition, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setReturnType", js_cocos2dx_extension_EditBox_setReturnType, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setInputFlag", js_cocos2dx_extension_EditBox_setInputFlag, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getMaxLength", js_cocos2dx_extension_EditBox_getMaxLength, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setText", js_cocos2dx_extension_EditBox_setText, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setMaxLength", js_cocos2dx_extension_EditBox_setMaxLength, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setContentSize", js_cocos2dx_extension_EditBox_setContentSize, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setFont", js_cocos2dx_extension_EditBox_setFont, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-		JS_FN("setVisible", js_cocos2dx_extension_EditBox_setVisible, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_EditBox_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -8737,10 +7683,10 @@ void js_register_cocos2dx_extension_EditBox(JSContext *cx, JSObject *global) {
 		JS_FS_END
 	};
 
-	jsb_EditBox_prototype = JS_InitClass(
+	jsb_cocos2d_extension_EditBox_prototype = JS_InitClass(
 		cx, global,
-		jsb_ControlButton_prototype,
-		jsb_EditBox_class,
+		jsb_cocos2d_extension_ControlButton_prototype,
+		jsb_cocos2d_extension_EditBox_class,
 		js_cocos2dx_extension_EditBox_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -8753,20 +7699,19 @@ void js_register_cocos2dx_extension_EditBox(JSContext *cx, JSObject *global) {
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::EditBox> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_EditBox_class;
-		p->proto = jsb_EditBox_prototype;
-		p->parentProto = jsb_ControlButton_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_EditBox_class;
+		p->proto = jsb_cocos2d_extension_EditBox_prototype;
+		p->parentProto = jsb_cocos2d_extension_ControlButton_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
-
-JSClass  *jsb_AssetsManager_class;
-JSObject *jsb_AssetsManager_prototype;
+JSClass  *jsb_cocos2d_extension_AssetsManager_class;
+JSObject *jsb_cocos2d_extension_AssetsManager_prototype;
 
 JSBool js_cocos2dx_extension_AssetsManager_setStoragePath(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -8815,8 +7760,8 @@ JSBool js_cocos2dx_extension_AssetsManager_checkUpdate(JSContext *cx, uint32_t a
 	cocos2d::extension::AssetsManager* cobj = (cocos2d::extension::AssetsManager *)(proxy ? proxy->ptr : NULL);
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_AssetsManager_checkUpdate : Invalid Native Object");
 	if (argc == 0) {
-		bool ret = cobj->checkUpdate();
-		jsval jsret;
+		JSBool ret = cobj->checkUpdate();
+		jsval jsret = JSVAL_NULL;
 		jsret = BOOLEAN_TO_JSVAL(ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8833,7 +7778,7 @@ JSBool js_cocos2dx_extension_AssetsManager_getStoragePath(JSContext *cx, uint32_
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_AssetsManager_getStoragePath : Invalid Native Object");
 	if (argc == 0) {
 		const char* ret = cobj->getStoragePath();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = c_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8905,7 +7850,7 @@ JSBool js_cocos2dx_extension_AssetsManager_getPackageUrl(JSContext *cx, uint32_t
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_AssetsManager_getPackageUrl : Invalid Native Object");
 	if (argc == 0) {
 		const char* ret = cobj->getPackageUrl();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = c_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8922,7 +7867,7 @@ JSBool js_cocos2dx_extension_AssetsManager_getConnectionTimeout(JSContext *cx, u
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_AssetsManager_getConnectionTimeout : Invalid Native Object");
 	if (argc == 0) {
 		unsigned int ret = cobj->getConnectionTimeout();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = uint32_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8939,7 +7884,7 @@ JSBool js_cocos2dx_extension_AssetsManager_getVersion(JSContext *cx, uint32_t ar
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_AssetsManager_getVersion : Invalid Native Object");
 	if (argc == 0) {
 		std::string ret = cobj->getVersion();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = std_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -8956,7 +7901,7 @@ JSBool js_cocos2dx_extension_AssetsManager_getVersionFileUrl(JSContext *cx, uint
 	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "js_cocos2dx_extension_AssetsManager_getVersionFileUrl : Invalid Native Object");
 	if (argc == 0) {
 		const char* ret = cobj->getVersionFileUrl();
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		jsret = c_string_to_jsval(cx, ret);
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
@@ -9036,10 +7981,10 @@ JSBool js_cocos2dx_extension_AssetsManager_create(JSContext *cx, uint32_t argc, 
 		;
 		JSB_PRECONDITION2(ok, cx, JS_FALSE, "js_cocos2dx_extension_AssetsManager_create : Error processing arguments");
 		cocos2d::extension::AssetsManager* ret = cocos2d::extension::AssetsManager::create(arg0, arg1, arg2, arg3, arg4, arg5);
-		jsval jsret;
+		jsval jsret = JSVAL_NULL;
 		do {
 		if (ret) {
-			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::AssetsManager>(cx, ret);
+			js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::extension::AssetsManager>(cx, (cocos2d::extension::AssetsManager*)ret);
 			jsret = OBJECT_TO_JSVAL(proxy->obj);
 		} else {
 			jsret = JSVAL_NULL;
@@ -9064,8 +8009,8 @@ JSBool js_cocos2dx_extension_AssetsManager_constructor(JSContext *cx, uint32_t a
 		}
 		TypeTest<cocos2d::extension::AssetsManager> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -9087,8 +8032,8 @@ JSBool js_cocos2dx_extension_AssetsManager_constructor(JSContext *cx, uint32_t a
 		}
 		TypeTest<cocos2d::extension::AssetsManager> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -9112,8 +8057,8 @@ JSBool js_cocos2dx_extension_AssetsManager_constructor(JSContext *cx, uint32_t a
 		}
 		TypeTest<cocos2d::extension::AssetsManager> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -9139,8 +8084,8 @@ JSBool js_cocos2dx_extension_AssetsManager_constructor(JSContext *cx, uint32_t a
 		}
 		TypeTest<cocos2d::extension::AssetsManager> t;
 		js_type_class_t *typeClass = nullptr;
-		long typeId = t.s_id();
-		auto typeMapIter = _js_global_type_map.find(typeId);
+		std::string typeName = t.s_name();
+		auto typeMapIter = _js_global_type_map.find(typeName);
 		CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 		typeClass = typeMapIter->second;
 		CCASSERT(typeClass, "The value is null.");
@@ -9157,36 +8102,24 @@ JSBool js_cocos2dx_extension_AssetsManager_constructor(JSContext *cx, uint32_t a
 }
 
 
+extern JSObject *jsb_cocos2d_Node_prototype;
 
-extern JSObject *jsb_Node_prototype;
-
-void js_cocos2dx_extension_AssetsManager_finalize(JSFreeOp *fop, JSObject *obj) {
+void js_cocos2d_extension_AssetsManager_finalize(JSFreeOp *fop, JSObject *obj) {
     CCLOGINFO("jsbindings: finalizing JS object %p (AssetsManager)", obj);
 }
 
-static JSBool js_cocos2dx_extension_AssetsManager_ctor(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-    cocos2d::extension::AssetsManager *nobj = new cocos2d::extension::AssetsManager();
-    js_proxy_t* p = jsb_new_proxy(nobj, obj);
-    nobj->autorelease();
-    JS_AddNamedObjectRoot(cx, &p->obj, "cocos2d::extension::AssetsManager");
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 void js_register_cocos2dx_extension_AssetsManager(JSContext *cx, JSObject *global) {
-	jsb_AssetsManager_class = (JSClass *)calloc(1, sizeof(JSClass));
-	jsb_AssetsManager_class->name = "AssetsManager";
-	jsb_AssetsManager_class->addProperty = JS_PropertyStub;
-	jsb_AssetsManager_class->delProperty = JS_DeletePropertyStub;
-	jsb_AssetsManager_class->getProperty = JS_PropertyStub;
-	jsb_AssetsManager_class->setProperty = JS_StrictPropertyStub;
-	jsb_AssetsManager_class->enumerate = JS_EnumerateStub;
-	jsb_AssetsManager_class->resolve = JS_ResolveStub;
-	jsb_AssetsManager_class->convert = JS_ConvertStub;
-	jsb_AssetsManager_class->finalize = js_cocos2dx_extension_AssetsManager_finalize;
-	jsb_AssetsManager_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
+	jsb_cocos2d_extension_AssetsManager_class = (JSClass *)calloc(1, sizeof(JSClass));
+	jsb_cocos2d_extension_AssetsManager_class->name = "AssetsManager";
+	jsb_cocos2d_extension_AssetsManager_class->addProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_AssetsManager_class->delProperty = JS_DeletePropertyStub;
+	jsb_cocos2d_extension_AssetsManager_class->getProperty = JS_PropertyStub;
+	jsb_cocos2d_extension_AssetsManager_class->setProperty = JS_StrictPropertyStub;
+	jsb_cocos2d_extension_AssetsManager_class->enumerate = JS_EnumerateStub;
+	jsb_cocos2d_extension_AssetsManager_class->resolve = JS_ResolveStub;
+	jsb_cocos2d_extension_AssetsManager_class->convert = JS_ConvertStub;
+	jsb_cocos2d_extension_AssetsManager_class->finalize = js_cocos2d_extension_AssetsManager_finalize;
+	jsb_cocos2d_extension_AssetsManager_class->flags = JSCLASS_HAS_RESERVED_SLOTS(2);
 
 	static JSPropertySpec properties[] = {
 		{0, 0, 0, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER}
@@ -9205,7 +8138,6 @@ void js_register_cocos2dx_extension_AssetsManager(JSContext *cx, JSObject *globa
 		JS_FN("getVersion", js_cocos2dx_extension_AssetsManager_getVersion, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("getVersionFileUrl", js_cocos2dx_extension_AssetsManager_getVersionFileUrl, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("deleteVersion", js_cocos2dx_extension_AssetsManager_deleteVersion, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
-        JS_FN("ctor", js_cocos2dx_extension_AssetsManager_ctor, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
         JS_FS_END
 	};
 
@@ -9214,10 +8146,10 @@ void js_register_cocos2dx_extension_AssetsManager(JSContext *cx, JSObject *globa
 		JS_FS_END
 	};
 
-	jsb_AssetsManager_prototype = JS_InitClass(
+	jsb_cocos2d_extension_AssetsManager_prototype = JS_InitClass(
 		cx, global,
-		jsb_Node_prototype,
-		jsb_AssetsManager_class,
+		jsb_cocos2d_Node_prototype,
+		jsb_cocos2d_extension_AssetsManager_class,
 		js_cocos2dx_extension_AssetsManager_constructor, 0, // constructor
 		properties,
 		funcs,
@@ -9230,14 +8162,14 @@ void js_register_cocos2dx_extension_AssetsManager(JSContext *cx, JSObject *globa
 	// add the proto and JSClass to the type->js info hash table
 	TypeTest<cocos2d::extension::AssetsManager> t;
 	js_type_class_t *p;
-	long typeId = t.s_id();
-	if (_js_global_type_map.find(typeId) == _js_global_type_map.end())
+	std::string typeName = t.s_name();
+	if (_js_global_type_map.find(typeName) == _js_global_type_map.end())
 	{
 		p = (js_type_class_t *)malloc(sizeof(js_type_class_t));
-		p->jsclass = jsb_AssetsManager_class;
-		p->proto = jsb_AssetsManager_prototype;
-		p->parentProto = jsb_Node_prototype;
-		_js_global_type_map.insert(std::make_pair(typeId, p));
+		p->jsclass = jsb_cocos2d_extension_AssetsManager_class;
+		p->proto = jsb_cocos2d_extension_AssetsManager_prototype;
+		p->parentProto = jsb_cocos2d_Node_prototype;
+		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
 
@@ -9256,19 +8188,19 @@ void register_all_cocos2dx_extension(JSContext* cx, JSObject* obj) {
 	obj = ns;
 
 	js_register_cocos2dx_extension_Control(cx, obj);
-	js_register_cocos2dx_extension_ControlHuePicker(cx, obj);
 	js_register_cocos2dx_extension_TableViewCell(cx, obj);
 	js_register_cocos2dx_extension_Scale9Sprite(cx, obj);
-	js_register_cocos2dx_extension_AssetsManager(cx, obj);
-	js_register_cocos2dx_extension_ControlColourPicker(cx, obj);
 	js_register_cocos2dx_extension_ControlSwitch(cx, obj);
-	js_register_cocos2dx_extension_ControlSlider(cx, obj);
-	js_register_cocos2dx_extension_ControlSaturationBrightnessPicker(cx, obj);
 	js_register_cocos2dx_extension_ScrollView(cx, obj);
-	js_register_cocos2dx_extension_ControlPotentiometer(cx, obj);
-	js_register_cocos2dx_extension_ControlStepper(cx, obj);
 	js_register_cocos2dx_extension_TableView(cx, obj);
+	js_register_cocos2dx_extension_AssetsManager(cx, obj);
 	js_register_cocos2dx_extension_ControlButton(cx, obj);
 	js_register_cocos2dx_extension_EditBox(cx, obj);
+	js_register_cocos2dx_extension_ControlSlider(cx, obj);
+	js_register_cocos2dx_extension_ControlStepper(cx, obj);
+	js_register_cocos2dx_extension_ControlSaturationBrightnessPicker(cx, obj);
+	js_register_cocos2dx_extension_ControlColourPicker(cx, obj);
+	js_register_cocos2dx_extension_ControlPotentiometer(cx, obj);
+	js_register_cocos2dx_extension_ControlHuePicker(cx, obj);
 }
 

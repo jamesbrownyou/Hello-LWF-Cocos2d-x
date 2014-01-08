@@ -23,7 +23,7 @@ setAutoPlaySequenceId : function () {},
 
 /**
  * @method getDocumentCallbackNames
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::ValueVector&"
  */
 getDocumentCallbackNames : function () {},
 
@@ -36,24 +36,17 @@ actionForSoundChannel : function () {},
 
 /**
  * @method setBaseValue
- * @param {cocos2d::Object*}
+ * @param {const cocos2d::Value&}
  * @param {cocos2d::Node*}
- * @param {const char*}
+ * @param {const std::string&}
  */
 setBaseValue : function () {},
 
 /**
  * @method getDocumentOutletNodes
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::Vector<cocos2d::Node *>&"
  */
 getDocumentOutletNodes : function () {},
-
-/**
- * @method addNode
- * @param {cocos2d::Node*}
- * @param {cocos2d::Dictionary*}
- */
-addNode : function () {},
 
 /**
  * @method getLastCompletedSequenceName
@@ -82,25 +75,33 @@ addDocumentOutletName : function () {},
 
 /**
  * @method getSequences
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::Vector<cocosbuilder::CCBSequence *>&"
  */
 getSequences : function () {},
 
 /**
  * @method getRootContainerSize
- * @return A value converted from C/C++ "cocos2d::Size"
+ * @return A value converted from C/C++ "const cocos2d::Size&"
  */
 getRootContainerSize : function () {},
 
 /**
  * @method setDocumentControllerName
- * @param {std::string}
+ * @param {const std::string&}
  */
 setDocumentControllerName : function () {},
 
 /**
+ * @method setObject
+ * @param {cocos2d::Object*}
+ * @param {cocos2d::Node*}
+ * @param {const std::string&}
+ */
+setObject : function () {},
+
+/**
  * @method getContainerSize
- * @return A value converted from C/C++ "cocos2d::Size"
+ * @return A value converted from C/C++ "const cocos2d::Size&"
  * @param {cocos2d::Node*}
  */
 getContainerSize : function () {},
@@ -114,7 +115,7 @@ actionForCallbackChannel : function () {},
 
 /**
  * @method getDocumentOutletNames
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::ValueVector&"
  */
 getDocumentOutletNames : function () {},
 
@@ -132,19 +133,19 @@ init : function () {},
 
 /**
  * @method getKeyframeCallbacks
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::ValueVector&"
  */
 getKeyframeCallbacks : function () {},
 
 /**
  * @method getDocumentCallbackControlEvents
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::ValueVector&"
  */
 getDocumentCallbackControlEvents : function () {},
 
 /**
  * @method setRootContainerSize
- * @param {cocos2d::Size}
+ * @param {const cocos2d::Size&}
  */
 setRootContainerSize : function () {},
 
@@ -226,19 +227,19 @@ getSequenceId : function () {},
 /**
  * @method setCallFunc
  * @param {cocos2d::CallFunc*}
- * @param {std::string}
+ * @param {const std::string&}
  */
 setCallFunc : function () {},
 
 /**
  * @method getDocumentCallbackNodes
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::Vector<cocos2d::Node *>&"
  */
 getDocumentCallbackNodes : function () {},
 
 /**
  * @method setSequences
- * @param {cocos2d::Array*}
+ * @param {const cocos2d::Vector<cocosbuilder::CCBSequence *>&}
  */
 setSequences : function () {},
 
@@ -286,7 +287,7 @@ addOwnerOutletName : function () {},
 
 /**
  * @method getOwnerCallbackNames
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::ValueVector"
  */
 getOwnerCallbackNames : function () {},
 
@@ -310,7 +311,7 @@ addOwnerOutletNode : function () {},
 
 /**
  * @method getOwnerCallbackNodes
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::Vector<cocos2d::Node *>&"
  */
 getOwnerCallbackNodes : function () {},
 
@@ -323,19 +324,19 @@ readSoundKeyframesForSeq : function () {},
 
 /**
  * @method getCCBRootPath
- * @return A value converted from C/C++ "std::string"
+ * @return A value converted from C/C++ "const std::string&"
  */
 getCCBRootPath : function () {},
 
 /**
  * @method getOwnerCallbackControlEvents
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::ValueVector&"
  */
 getOwnerCallbackControlEvents : function () {},
 
 /**
  * @method getOwnerOutletNodes
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::Vector<cocos2d::Node *>&"
  */
 getOwnerOutletNodes : function () {},
 
@@ -353,7 +354,7 @@ addOwnerCallbackControlEvents : function () {},
 
 /**
  * @method getOwnerOutletNames
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::ValueVector"
  */
 getOwnerOutletNames : function () {},
 
@@ -366,13 +367,13 @@ readCallbackKeyframesForSeq : function () {},
 
 /**
  * @method getAnimationManagersForNodes
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::Vector<cocosbuilder::CCBAnimationManager *>&"
  */
 getAnimationManagersForNodes : function () {},
 
 /**
  * @method getNodesWithAnimationManagers
- * @return A value converted from C/C++ "cocos2d::Array*"
+ * @return A value converted from C/C++ "cocos2d::Vector<cocos2d::Node *>&"
  */
 getNodesWithAnimationManagers : function () {},
 

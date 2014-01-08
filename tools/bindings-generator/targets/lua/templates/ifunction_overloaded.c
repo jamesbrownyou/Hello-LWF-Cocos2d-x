@@ -47,7 +47,7 @@ int ${signature_name}(lua_State* tolua_S)
                 #set $count = $count + 1
 
             #if $arg_idx >= 0 
-            if (!ok) { ok = true; break; }
+            if (!ok) { break; }
             #end if
             #end while
             #set $arg_list = ", ".join($arg_array)
@@ -78,12 +78,13 @@ int ${signature_name}(lua_State* tolua_S)
                 #if $func.ret_type.is_enum
             int ret = (int)cobj->${func.func_name}($arg_list);
                 #else
-            ${func.ret_type} ret = cobj->${func.func_name}($arg_list);
+            ${func.ret_type.get_whole_name($generator)} ret = cobj->${func.func_name}($arg_list);
                 #end if
             ${func.ret_type.from_native({"generator": $generator,
                                                       "in_value": "ret",
                                                       "out_value": "ret",
-                                                      "ntype": $func.ret_type.name.replace("*", ""),
+                                                      "type_name": $func.ret_type.name.replace("*", ""),
+                                                      "ntype": $func.ret_type.get_whole_name($generator),
                                                       "class_name": $class_name,
                                                       "level": 2})};
             return 1;
@@ -95,14 +96,19 @@ int ${signature_name}(lua_State* tolua_S)
         }
     }while(0);
     #set $arg_idx = $arg_idx + 1
+    ok  = true;
     #end while
 #end if
 #end for
     CCLOG("%s has wrong number of arguments: %d, was expecting %d \n", "${func.func_name}",argc, ${func.min_args});
     return 0;
+
 \#if COCOS2D_DEBUG >= 1
+#if not $is_constructor
     tolua_lerror:
+#end if
     tolua_error(tolua_S,"#ferror in function '${signature_name}'.",&tolua_err);
 \#endif
+
     return 0;
 }

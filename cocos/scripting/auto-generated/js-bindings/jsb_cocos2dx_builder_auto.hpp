@@ -5,8 +5,8 @@
 #include "jsfriendapi.h"
 
 
-extern JSClass  *jsb_CCBAnimationManager_class;
-extern JSObject *jsb_CCBAnimationManager_prototype;
+extern JSClass  *jsb_cocosbuilder_CCBAnimationManager_class;
+extern JSObject *jsb_cocosbuilder_CCBAnimationManager_prototype;
 
 JSBool js_cocos2dx_builder_CCBAnimationManager_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_builder_CCBAnimationManager_finalize(JSContext *cx, JSObject *obj);
@@ -18,7 +18,6 @@ JSBool js_cocos2dx_builder_CCBAnimationManager_getDocumentCallbackNames(JSContex
 JSBool js_cocos2dx_builder_CCBAnimationManager_actionForSoundChannel(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_setBaseValue(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_getDocumentOutletNodes(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_builder_CCBAnimationManager_addNode(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_getLastCompletedSequenceName(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_setRootNode(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_runAnimationsForSequenceNamedTweenDuration(JSContext *cx, uint32_t argc, jsval *vp);
@@ -26,6 +25,7 @@ JSBool js_cocos2dx_builder_CCBAnimationManager_addDocumentOutletName(JSContext *
 JSBool js_cocos2dx_builder_CCBAnimationManager_getSequences(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_getRootContainerSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_setDocumentControllerName(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_builder_CCBAnimationManager_setObject(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_getContainerSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_actionForCallbackChannel(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_getDocumentOutletNames(JSContext *cx, uint32_t argc, jsval *vp);
@@ -53,8 +53,8 @@ JSBool js_cocos2dx_builder_CCBAnimationManager_debug(JSContext *cx, uint32_t arg
 JSBool js_cocos2dx_builder_CCBAnimationManager_getDocumentControllerName(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_builder_CCBAnimationManager_CCBAnimationManager(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_CCBReader_class;
-extern JSObject *jsb_CCBReader_prototype;
+extern JSClass  *jsb_cocosbuilder_CCBReader_class;
+extern JSObject *jsb_cocosbuilder_CCBReader_prototype;
 
 JSBool js_cocos2dx_builder_CCBReader_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_builder_CCBReader_finalize(JSContext *cx, JSObject *obj);

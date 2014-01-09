@@ -12,6 +12,7 @@ import yaml
 import re
 import os
 import inspect
+import traceback
 from Cheetah.Template import Template
 
 type_map = {
@@ -73,11 +74,11 @@ cindex.CursorKind.DECL_REF_EXPR
 ]
 
 def native_name_from_type(ntype, underlying=False):
-    kind = ntype.get_canonical().kind
-    const = "const " if ntype.is_const_qualified() else ""
+    kind = ntype.kind #get_canonical().kind
+    const = "" #"const " if ntype.is_const_qualified() else ""
     if not underlying and kind == cindex.TypeKind.ENUM:
         decl = ntype.get_declaration()
-        return namespaced_name(decl)
+        return get_namespaced_name(decl)
     elif kind in type_map:
         return const + type_map[kind]
     elif kind == cindex.TypeKind.RECORD:
@@ -114,7 +115,7 @@ def build_namespace(cursor, namespaces=[]):
     return namespaces
 
 
-def namespaced_name(declaration_cursor):
+def get_namespaced_name(declaration_cursor):
     ns_list = build_namespace(declaration_cursor, [])
     ns_list.reverse()
     ns = "::".join(ns_list)
@@ -133,38 +134,89 @@ class NativeType(object):
         self.ret_type = None
         self.namespaced_name = ""
         self.name = ""
+        self.whole_name = None
+        self.is_const = False
+        self.is_pointer = False
+        self.canonical_type = None
 
     @staticmethod
     def from_type(ntype):
         if ntype.kind == cindex.TypeKind.POINTER:
             nt = NativeType.from_type(ntype.get_pointee())
+
+            if None != nt.canonical_type:
+                nt.canonical_type.name += "*"
+                nt.canonical_type.namespaced_name += "*"
+                nt.canonical_type.whole_name += "*"
+
             nt.name += "*"
             nt.namespaced_name += "*"
+            nt.whole_name = nt.namespaced_name
             nt.is_enum = False
+            nt.is_const = ntype.get_pointee().is_const_qualified()
+            nt.is_pointer = True
+            if nt.is_const:
+                nt.whole_name = "const " + nt.whole_name
         elif ntype.kind == cindex.TypeKind.LVALUEREFERENCE:
             nt = NativeType.from_type(ntype.get_pointee())
-            nt.namespaced_name = namespaced_name(ntype.get_pointee().get_declaration())
+            nt.is_const = ntype.get_pointee().is_const_qualified()
+            nt.whole_name = nt.namespaced_name + "&"
+
+            if nt.is_const:
+                nt.whole_name = "const " + nt.whole_name
+
+            if None != nt.canonical_type:
+                nt.canonical_type.whole_name += "&"
         else:
             nt = NativeType()
+            decl = ntype.get_declaration()
 
             if ntype.kind == cindex.TypeKind.RECORD:
-                decl = ntype.get_declaration()
                 if decl.kind == cindex.CursorKind.CLASS_DECL:
                     nt.is_object = True
                 nt.name = decl.displayname
-                nt.namespaced_name = namespaced_name(decl)
+                nt.namespaced_name = get_namespaced_name(decl)
+                nt.whole_name = nt.namespaced_name
             else:
-                nt.name = native_name_from_type(ntype)
-                if nt.name != INVALID_NATIVE_TYPE and nt.name != "std::string" and nt.name != "std::function" and ntype.kind == cindex.TypeKind.UNEXPOSED:
-                    return NativeType.from_type(ntype.get_canonical())
+                if decl.kind == cindex.CursorKind.NO_DECL_FOUND:
+                    nt.name = native_name_from_type(ntype)
+                else:
+                    nt.name = decl.spelling
+                nt.namespaced_name = get_namespaced_name(decl)
 
-                nt.namespaced_name = nt.name
+                if nt.namespaced_name == "std::string":
+                    nt.name = nt.namespaced_name
+
+                if nt.namespaced_name.startswith("std::function"):
+                    nt.name = "std::function"
+
+                if len(nt.namespaced_name) == 0 or nt.namespaced_name.find("::") == -1:
+                    nt.namespaced_name = nt.name
+
+                nt.whole_name = nt.namespaced_name
+                nt.is_const = ntype.is_const_qualified()
+                if nt.is_const:
+                    nt.whole_name = "const " + nt.whole_name
+
+                # Check whether it's a std::function typedef
+                cdecl = ntype.get_canonical().get_declaration()
+                if None != cdecl.spelling and 0 == cmp(cdecl.spelling, "function"):
+                    nt.name = "std::function"
+
+                if nt.name != INVALID_NATIVE_TYPE and nt.name != "std::string" and nt.name != "std::function":
+                    if ntype.kind == cindex.TypeKind.UNEXPOSED or ntype.kind == cindex.TypeKind.TYPEDEF:
+                        ret = NativeType.from_type(ntype.get_canonical())
+                        if ret.name != "":
+                            if decl.kind == cindex.CursorKind.TYPEDEF_DECL:
+                                ret.canonical_type = nt
+                            return ret
+
                 nt.is_enum = ntype.get_canonical().kind == cindex.TypeKind.ENUM
-                if nt.name == "std::function":
-                    decl = ntype.get_canonical().get_declaration()
-                    nt.namespaced_name = namespaced_name(decl)
 
-                    r = re.compile('function<(\S+) \((.*)\)>').search(decl.displayname)
+                if nt.name == "std::function":
+                    nt.namespaced_name = get_namespaced_name(cdecl)
+
+                    r = re.compile('function<(\S+) \((.*)\)>').search(cdecl.displayname)
                     (ret_type, params) = r.groups()
                     params = filter(None, params.split(", "))
 
@@ -186,6 +238,7 @@ class NativeType(object):
         nt = NativeType()
         nt.name = displayname
         nt.namespaced_name = displayname
+        nt.whole_name = nt.namespaced_name
         nt.is_object = True
         return nt
 
@@ -194,32 +247,87 @@ class NativeType(object):
         params = ["%s larg%d" % (str(nt), i) for i, nt in enumerate(self.param_types)]
         return ", ".join(params)
 
+    @staticmethod
+    def dict_has_key_re(dict, real_key_list):
+        for real_key in real_key_list:
+            for (k, v) in dict.items():
+                if k.startswith('@'):
+                    k = k[1:]
+                    match = re.match("^" + k + "$", real_key)
+                    if match:
+                        return True
+                else:
+                    if k == real_key:
+                        return True
+        return False
+
+    @staticmethod
+    def dict_get_value_re(dict, real_key_list):
+        for real_key in real_key_list:
+            for (k, v) in dict.items():
+                if k.startswith('@'):
+                    k = k[1:]
+                    match = re.match("^" + k + "$", real_key)
+                    if match:
+                        return v
+                else:
+                    if k == real_key:
+                        return v
+        return None
+
+    @staticmethod
+    def dict_replace_value_re(dict, real_key_list):
+        for real_key in real_key_list:
+            for (k, v) in dict.items():
+                if k.startswith('@'):
+                    k = k[1:]
+                    match = re.match('.*' + k, real_key)
+                    if match:
+                        return re.sub(k, v, real_key)
+                else:
+                    if k == real_key:
+                        return v
+        return None
+
     def from_native(self, convert_opts):
         assert(convert_opts.has_key('generator'))
         generator = convert_opts['generator']
-        name = self.name
-        if self.is_object:
-            if not generator.config['conversions']['from_native'].has_key(name):
-                name = "object"
-        elif self.is_enum:
-            name = "int"
+        keys = []
 
-        if generator.config['conversions']['from_native'].has_key(name):
-            tpl = generator.config['conversions']['from_native'][name]
+        if self.canonical_type != None:
+            keys.append(self.canonical_type.name)
+        keys.append(self.name)
+
+        from_native_dict = generator.config['conversions']['from_native']
+
+        if self.is_object:
+            if not NativeType.dict_has_key_re(from_native_dict, keys):
+                keys.append("object")
+        elif self.is_enum:
+            keys.append("int")
+
+        if NativeType.dict_has_key_re(from_native_dict, keys):
+            tpl = NativeType.dict_get_value_re(from_native_dict, keys)
             tpl = Template(tpl, searchList=[convert_opts])
             return str(tpl).rstrip()
 
-        return "#pragma warning NO CONVERSION FROM NATIVE FOR " + name
+        return "#pragma warning NO CONVERSION FROM NATIVE FOR " + self.name
 
     def to_native(self, convert_opts):
         assert('generator' in convert_opts)
         generator = convert_opts['generator']
-        name = self.name
+        keys = []
+
+        if self.canonical_type != None:
+            keys.append(self.canonical_type.name)
+        keys.append(self.name)
+
+        to_native_dict = generator.config['conversions']['to_native']
         if self.is_object:
-            if not name in generator.config['conversions']['to_native']:
-                name = "object"
+            if not NativeType.dict_has_key_re(to_native_dict, keys):
+                keys.append("object")
         elif self.is_enum:
-            name = "int"
+            keys.append("int")
 
         if self.is_function:
             tpl = Template(file=os.path.join(generator.target, "templates", "lambda.c"),
@@ -227,20 +335,63 @@ class NativeType(object):
             indent = convert_opts['level'] * "\t"
             return str(tpl).replace("\n", "\n" + indent)
 
-        if generator.config['conversions']['to_native'].has_key(name):
-            tpl = generator.config['conversions']['to_native'][name]
+
+        if NativeType.dict_has_key_re(to_native_dict, keys):
+            tpl = NativeType.dict_get_value_re(to_native_dict, keys)
             tpl = Template(tpl, searchList=[convert_opts])
             return str(tpl).rstrip()
-        return "#pragma warning NO CONVERSION TO NATIVE FOR " + name
+        return "#pragma warning NO CONVERSION TO NATIVE FOR " + self.name
 
     def to_string(self, generator):
         conversions = generator.config['conversions']
-        if conversions.has_key('native_types') and conversions['native_types'].has_key(self.namespaced_name):
-            return conversions['native_types'][self.namespaced_name]
-        return self.namespaced_name
+        if conversions.has_key('native_types'):
+            native_types_dict = conversions['native_types']
+            if NativeType.dict_has_key_re(native_types_dict, [self.namespaced_name]):
+                return NativeType.dict_get_value_re(native_types_dict, [self.namespaced_name])
+
+        name = self.namespaced_name
+
+        to_native_dict = generator.config['conversions']['to_native']
+        from_native_dict = generator.config['conversions']['from_native']
+        use_typedef = False
+
+        typedef_name = self.canonical_type.name if None != self.canonical_type else None
+
+        if None != typedef_name:
+            if NativeType.dict_has_key_re(to_native_dict, [typedef_name]) or NativeType.dict_has_key_re(from_native_dict, [typedef_name]):
+                use_typedef = True
+
+        if use_typedef and self.canonical_type:
+            name = self.canonical_type.namespaced_name
+        return "const " + name if (self.is_pointer and self.is_const) else name
+
+    def get_whole_name(self, generator):
+        conversions = generator.config['conversions']
+        to_native_dict = conversions['to_native']
+        from_native_dict = conversions['from_native']
+        use_typedef = False
+        name = self.whole_name
+        typedef_name = self.canonical_type.name if None != self.canonical_type else None
+
+        if None != typedef_name:
+            if NativeType.dict_has_key_re(to_native_dict, [typedef_name]) or NativeType.dict_has_key_re(from_native_dict, [typedef_name]):
+                use_typedef = True
+
+        if use_typedef and self.canonical_type:
+            name = self.canonical_type.whole_name
+
+        to_replace = None
+        if conversions.has_key('native_types'):
+            native_types_dict = conversions['native_types']
+            to_replace = NativeType.dict_replace_value_re(native_types_dict, [name])
+
+        if to_replace:
+            name = to_replace
+
+        return name
 
     def __str__(self):
-        return self.namespaced_name
+        return  self.canonical_type.whole_name if None != self.canonical_type else self.whole_name
 
 class NativeField(object):
     def __init__(self, cursor):
@@ -260,10 +411,10 @@ class NativeField(object):
 def iterate_param_node(param_node, depth=1):
     for node in param_node.get_children():
         # print(">"*depth+" "+str(node.kind))
-        if (node.kind in default_arg_type_arr):
+        if node.kind in default_arg_type_arr:
             return True
 
-        if (iterate_param_node(node, depth+1)):
+        if iterate_param_node(node, depth + 1):
             return True
 
     return False
@@ -278,11 +429,10 @@ class NativeFunction(object):
         self.implementations = []
         self.is_constructor = False
         self.not_supported = False
-        result = cursor.result_type
-        # get the result
-        if result.kind == cindex.TypeKind.LVALUEREFERENCE:
-            result = result.get_pointee()
+        self.is_override = False
+
         self.ret_type = NativeType.from_type(cursor.result_type)
+
         # parse the arguments
         # if self.func_name == "spriteWithFile":
         #   pdb.set_trace()
@@ -293,14 +443,15 @@ class NativeFunction(object):
             if nt.not_supported:
                 self.not_supported = True
 
-
         found_default_arg = False
         index = -1
 
         for arg_node in self.cursor.get_children():
+            if arg_node.kind == cindex.CursorKind.CXX_OVERRIDE_ATTR:
+                self.is_override = True
             if arg_node.kind == cindex.CursorKind.PARM_DECL:
-                index+=1
-                if (iterate_param_node(arg_node)):
+                index += 1
+                if iterate_param_node(arg_node):
                     found_default_arg = True
                     break
 
@@ -332,6 +483,7 @@ class NativeFunction(object):
                     self.signature_name = str(tpl)
             tpl = Template(file=os.path.join(gen.target, "templates", "ifunction.c"),
                             searchList=[current_class, self])
+
         gen.impl_file.write(str(tpl))
         apidoc_function_js = Template(file=os.path.join(gen.target,
                                                         "templates",
@@ -399,11 +551,15 @@ class NativeClass(object):
 
         registration_name = generator.get_class_or_rename_class(self.class_name)
         if generator.remove_prefix:
-            self.target_class_name = re.sub('^'+generator.remove_prefix, '', registration_name)
+            self.target_class_name = re.sub('^' + generator.remove_prefix, '', registration_name)
         else:
             self.target_class_name = registration_name
-        self.namespaced_class_name = namespaced_name(cursor)
+        self.namespaced_class_name = get_namespaced_name(cursor)
         self.parse()
+
+    @property
+    def underlined_class_name(self):
+        return self.namespaced_class_name.replace("::", "_")
 
     def parse(self):
         '''
@@ -475,6 +631,14 @@ class NativeClass(object):
             if self._process_node(node):
                 self._deep_iterate(node, depth + 1)
 
+    @staticmethod
+    def _is_method_in_parents(current_class, method_name):
+        if len(current_class.parents) > 0:
+            if method_name in current_class.parents[0].methods:
+                return True
+            return NativeClass._is_method_in_parents(current_class.parents[0], method_name)
+        return False
+
     def _process_node(self, cursor):
         '''
         process the node, depending on the type. If returns true, then it will perform a deep
@@ -503,7 +667,11 @@ class NativeClass(object):
                 registration_name = self.generator.should_rename_function(self.class_name, m.func_name) or m.func_name
                 # bail if the function is not supported (at least one arg not supported)
                 if m.not_supported:
-                    return
+                    return False
+                if m.is_override:
+                    if NativeClass._is_method_in_parents(self, registration_name):
+                        return False
+
                 if m.static:
                     if not self.static_methods.has_key(registration_name):
                         self.static_methods[registration_name] = m
@@ -554,6 +722,7 @@ class Generator(object):
         self.prefix = opts['prefix']
         self.headers = opts['headers'].split(' ')
         self.classes = opts['classes']
+        self.classes_need_extend = opts['classes_need_extend']
         self.classes_have_no_parents = opts['classes_have_no_parents'].split(' ')
         self.base_classes_to_skip = opts['base_classes_to_skip'].split(' ')
         self.abstract_classes = opts['abstract_classes'].split(' ')
@@ -561,6 +730,7 @@ class Generator(object):
         self.target = opts['target']
         self.remove_prefix = opts['remove_prefix']
         self.target_ns = opts['target_ns']
+        self.cpp_ns = opts['cpp_ns']
         self.impl_file = None
         self.head_file = None
         self.skip_classes = {}
@@ -644,6 +814,16 @@ class Generator(object):
         for key in self.classes:
             md = re.match("^" + key + "$", class_name)
             if md and not self.should_skip(class_name, None):
+                return True
+        return False
+
+    def in_listed_extend_classed(self, class_name):
+        """
+        returns True if the class is in the list of required classes that need to extend
+        """
+        for key in self.classes_need_extend:
+            md = re.match("^" + key + "$", class_name)
+            if md:
                 return True
         return False
 
@@ -732,17 +912,26 @@ class Generator(object):
     def _deep_iterate(self, cursor, depth=0):
         # get the canonical type
         if cursor.kind == cindex.CursorKind.CLASS_DECL:
-            if cursor == cursor.type.get_declaration() and len(cursor.get_children_array()) > 0 and self.in_listed_classes(cursor.displayname):
-                if not self.generated_classes.has_key(cursor.displayname):
-                    nclass = NativeClass(cursor, self)
-                    nclass.generate_code()
-                    self.generated_classes[cursor.displayname] = nclass
-                return
+            if cursor == cursor.type.get_declaration() and len(cursor.get_children_array()) > 0:
+                is_targeted_class = True
+                if self.cpp_ns:
+                    is_targeted_class = False
+                    namespaced_name = get_namespaced_name(cursor)
+                    for ns in self.cpp_ns:
+                        if namespaced_name.startswith(ns):
+                            is_targeted_class = True
+                            break
+
+                if is_targeted_class and self.in_listed_classes(cursor.displayname):
+                    if not self.generated_classes.has_key(cursor.displayname):
+                        nclass = NativeClass(cursor, self)
+                        nclass.generate_code()
+                        self.generated_classes[cursor.displayname] = nclass
+                    return
 
         for node in cursor.get_children():
             # print("%s %s - %s" % (">" * depth, node.displayname, node.kind))
             self._deep_iterate(node, depth + 1)
-
 
 def main():
     from optparse import OptionParser
@@ -819,11 +1008,13 @@ def main():
                 'prefix': config.get(s, 'prefix'),
                 'headers':    (config.get(s, 'headers'        , 0, dict(userconfig.items('DEFAULT')))),
                 'classes': config.get(s, 'classes').split(' '),
+                'classes_need_extend': config.get(s, 'classes_need_extend').split(' ') if config.has_option(s, 'classes_need_extend') else [],
                 'clang_args': (config.get(s, 'extra_arguments', 0, dict(userconfig.items('DEFAULT'))) or "").split(" "),
                 'target': os.path.join(workingdir, "targets", t),
                 'outdir': outdir,
                 'remove_prefix': config.get(s, 'remove_prefix'),
                 'target_ns': config.get(s, 'target_namespace'),
+                'cpp_ns': config.get(s, 'cpp_namespace').split(' ') if config.has_option(s, 'cpp_namespace') else None,
                 'classes_have_no_parents': config.get(s, 'classes_have_no_parents'),
                 'base_classes_to_skip': config.get(s, 'base_classes_to_skip'),
                 'abstract_classes': config.get(s, 'abstract_classes'),
@@ -840,5 +1031,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        print e
+        traceback.print_exc()
         sys.exit(1)

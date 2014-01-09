@@ -39,7 +39,7 @@ int ${signature_name}(lua_State* tolua_S)
             #set $arg_array += ["arg"+str(count)]
             #set $count = $count + 1
             #if $arg_idx >= 0
-            if (!ok) { ok = true; break; }
+            if (!ok) { break; }
             #end if
             #end while
             #set $arg_list = ", ".join($arg_array)
@@ -47,12 +47,13 @@ int ${signature_name}(lua_State* tolua_S)
                 #if $func.ret_type.is_enum
             int ret = (int)${namespaced_class_name}::${func.func_name}($arg_list);
                 #else
-            ${func.ret_type} ret = ${namespaced_class_name}::${func.func_name}($arg_list);
+            ${func.ret_type.get_whole_name($generator)} ret = ${namespaced_class_name}::${func.func_name}($arg_list);
                 #end if
             ${func.ret_type.from_native({"generator": $generator,
                                          "in_value": "ret",
                                          "out_value": "jsret",
-                                         "ntype": $func.ret_type.name.replace("*", ""),
+                                         "type_name": $func.ret_type.name.replace("*", ""),
+                                         "ntype": $func.ret_type.get_whole_name($generator),
                                          "class_name": $class_name,
                                          "level": 2})};
             return 1;
@@ -61,8 +62,9 @@ int ${signature_name}(lua_State* tolua_S)
             return 0;
             #end if
         }
-        #set $arg_idx = $arg_idx + 1
     } while (0);
+    #set $arg_idx = $arg_idx + 1
+    ok  = true;
     #end while
     #end if
     #end for

@@ -50,8 +50,8 @@ JSBool ${signature_name}(JSContext *cx, uint32_t argc, jsval *vp)
 #end if
 			TypeTest<${namespaced_class_name}> t;
 			js_type_class_t *typeClass = nullptr;
-			long typeId = t.s_id();
-			auto typeMapIter = _js_global_type_map.find(typeId);
+			std::string typeName = t.s_name();
+			auto typeMapIter = _js_global_type_map.find(typeName);
 			CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
 			typeClass = typeMapIter->second;
 			CCASSERT(typeClass, "The value is null.");
@@ -65,9 +65,9 @@ JSBool ${signature_name}(JSContext *cx, uint32_t argc, jsval *vp)
 				#if $func.ret_type.is_enum
 			int ret = (int)cobj->${func.func_name}($arg_list);
 				#else
-			${func.ret_type} ret = cobj->${func.func_name}($arg_list);
+			${func.ret_type.get_whole_name($generator)} ret = cobj->${func.func_name}($arg_list);
 				#end if
-			jsval jsret;
+			jsval jsret = JSVAL_NULL;
 			${func.ret_type.from_native({"generator": $generator,
 													  "in_value": "ret",
 													  "out_value": "jsret",

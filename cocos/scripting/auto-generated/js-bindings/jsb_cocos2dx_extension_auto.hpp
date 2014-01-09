@@ -5,27 +5,20 @@
 #include "jsfriendapi.h"
 
 
-extern JSClass  *jsb_Scale9Sprite_class;
-extern JSObject *jsb_Scale9Sprite_prototype;
+extern JSClass  *jsb_cocos2d_extension_Scale9Sprite_class;
+extern JSObject *jsb_cocos2d_extension_Scale9Sprite_prototype;
 
 JSBool js_cocos2dx_extension_Scale9Sprite_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_Scale9Sprite_finalize(JSContext *cx, JSObject *obj);
 void js_register_cocos2dx_extension_Scale9Sprite(JSContext *cx, JSObject *global);
 void register_all_cocos2dx_extension(JSContext* cx, JSObject* obj);
 JSBool js_cocos2dx_extension_Scale9Sprite_resizableSpriteWithCapInsets(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_setOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_setContentSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_setInsetBottom(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_isOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_setOpacity(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrameName(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_setInsetTop(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_updateDisplayedOpacity(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_init(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_setPreferredSize(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_getOpacity(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_setSpriteFrame(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_getColor(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_initWithBatchNode(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_getInsetBottom(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_getCapInsets(JSContext *cx, uint32_t argc, jsval *vp);
@@ -33,22 +26,20 @@ JSBool js_cocos2dx_extension_Scale9Sprite_updateWithBatchNode(JSContext *cx, uin
 JSBool js_cocos2dx_extension_Scale9Sprite_getInsetRight(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_getOriginalSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_initWithFile(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_setColor(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_getInsetTop(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_setInsetLeft(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_initWithSpriteFrame(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_getPreferredSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_setCapInsets(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_getInsetLeft(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Scale9Sprite_updateDisplayedColor(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_setInsetRight(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_createWithSpriteFrameName(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_createWithSpriteFrame(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Scale9Sprite_Scale9Sprite(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_Control_class;
-extern JSObject *jsb_Control_prototype;
+extern JSClass  *jsb_cocos2d_extension_Control_class;
+extern JSObject *jsb_cocos2d_extension_Control_prototype;
 
 JSBool js_cocos2dx_extension_Control_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_Control_finalize(JSContext *cx, JSObject *obj);
@@ -59,58 +50,42 @@ JSBool js_cocos2dx_extension_Control_getState(JSContext *cx, uint32_t argc, jsva
 JSBool js_cocos2dx_extension_Control_sendActionsForControlEvents(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_setSelected(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_isEnabled(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Control_isTouchInside(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_needsLayout(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_hasVisibleParents(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_isSelected(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Control_init(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_Control_isTouchInside(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_setHighlighted(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Control_setOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Control_isOpacityModifyRGB(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_getTouchLocation(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_isHighlighted(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_Control_create(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_Control_Control(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlButton_class;
-extern JSObject *jsb_ControlButton_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlButton_class;
+extern JSObject *jsb_cocos2d_extension_ControlButton_prototype;
 
 JSBool js_cocos2dx_extension_ControlButton_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlButton_finalize(JSContext *cx, JSObject *obj);
 void js_register_cocos2dx_extension_ControlButton(JSContext *cx, JSObject *global);
 void register_all_cocos2dx_extension(JSContext* cx, JSObject* obj);
-JSBool js_cocos2dx_extension_ControlButton_setTitleColorDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_isPushed(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setSelected(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setTitleLabelForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setAdjustBackgroundImage(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getLabelAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setHighlighted(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setZoomOnTouchDown(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setBackgroundSpriteDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setTitleForState(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getTitleDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setLabelAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_initWithBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlButton_getLabelAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getTitleTTFSizeForState(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setTitleDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setOpacity(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_init(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setTitleTTFForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setTitleTTFSizeForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setTitleLabel(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getOpacity(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlButton_setPreferredSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getCurrentTitleColor(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getTitleColorDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setEnabled(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getBackgroundSpriteForState(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getColor(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setMargins(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_needsLayout(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_initWithTitleAndFontNameAndFontSize(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getCurrentTitle(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getHorizontalOrigin(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlButton_needsLayout(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlButton_getCurrentTitle(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getTitleTTFForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getTitleColorForState(JSContext *cx, uint32_t argc, jsval *vp);
@@ -118,25 +93,20 @@ JSBool js_cocos2dx_extension_ControlButton_setTitleColorForState(JSContext *cx, 
 JSBool js_cocos2dx_extension_ControlButton_doesAdjustBackgroundImage(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setBackgroundSpriteFrameForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setBackgroundSpriteForState(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setColor(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getTitleLabelDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_initWithLabelAndBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setPreferredSize(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_setTitleLabelDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlButton_setBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getTitleLabel(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getPreferredSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getVerticalMargin(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_getBackgroundSpriteDispatchTable(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getTitleLabelForState(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlButton_setMargins(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_setTitleBMFontForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getTitleBMFontForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getZoomOnTouchDown(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_getTitleForState(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlButton_create(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlButton_ControlButton(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlHuePicker_class;
-extern JSObject *jsb_ControlHuePicker_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlHuePicker_class;
+extern JSObject *jsb_cocos2d_extension_ControlHuePicker_prototype;
 
 JSBool js_cocos2dx_extension_ControlHuePicker_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlHuePicker_finalize(JSContext *cx, JSObject *obj);
@@ -156,8 +126,8 @@ JSBool js_cocos2dx_extension_ControlHuePicker_setSlider(JSContext *cx, uint32_t 
 JSBool js_cocos2dx_extension_ControlHuePicker_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlHuePicker_ControlHuePicker(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlSaturationBrightnessPicker_class;
-extern JSObject *jsb_ControlSaturationBrightnessPicker_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlSaturationBrightnessPicker_class;
+extern JSObject *jsb_cocos2d_extension_ControlSaturationBrightnessPicker_prototype;
 
 JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlSaturationBrightnessPicker_finalize(JSContext *cx, JSObject *obj);
@@ -175,8 +145,8 @@ JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_getBrightness(JSC
 JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlSaturationBrightnessPicker_ControlSaturationBrightnessPicker(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlColourPicker_class;
-extern JSObject *jsb_ControlColourPicker_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlColourPicker_class;
+extern JSObject *jsb_cocos2d_extension_ControlColourPicker_prototype;
 
 JSBool js_cocos2dx_extension_ControlColourPicker_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlColourPicker_finalize(JSContext *cx, JSObject *obj);
@@ -196,38 +166,36 @@ JSBool js_cocos2dx_extension_ControlColourPicker_getBackground(JSContext *cx, ui
 JSBool js_cocos2dx_extension_ControlColourPicker_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlColourPicker_ControlColourPicker(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlPotentiometer_class;
-extern JSObject *jsb_ControlPotentiometer_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlPotentiometer_class;
+extern JSObject *jsb_cocos2d_extension_ControlPotentiometer_prototype;
 
 JSBool js_cocos2dx_extension_ControlPotentiometer_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlPotentiometer_finalize(JSContext *cx, JSObject *obj);
 void js_register_cocos2dx_extension_ControlPotentiometer(JSContext *cx, JSObject *global);
 void register_all_cocos2dx_extension(JSContext* cx, JSObject* obj);
 JSBool js_cocos2dx_extension_ControlPotentiometer_setPreviousLocation(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_setProgressTimer(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_getMinimumValue(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_setThumbSprite(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_setMinimumValue(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_setEnabled(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_setValue(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_setMaximumValue(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerEnded(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_getProgressTimer(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_getMaximumValue(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_isTouchInside(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ControlPotentiometer_getValue(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_angleInDegreesBetweenLineFromPoint_toPoint_toLineFromPoint_toPoint(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerBegan(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_setMaximumValue(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_getMinimumValue(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_setThumbSprite(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_getValue(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_getPreviousLocation(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_distanceBetweenPointAndPoint(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerEnded(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_setProgressTimer(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_setMinimumValue(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_getThumbSprite(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_initWithTrackSprite_ProgressTimer_ThumbSprite(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_ControlPotentiometer_potentiometerMoved(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlPotentiometer_ControlPotentiometer(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlSlider_class;
-extern JSObject *jsb_ControlSlider_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlSlider_class;
+extern JSObject *jsb_cocos2d_extension_ControlSlider_prototype;
 
 JSBool js_cocos2dx_extension_ControlSlider_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlSlider_finalize(JSContext *cx, JSObject *obj);
@@ -257,8 +225,8 @@ JSBool js_cocos2dx_extension_ControlSlider_setMaximumAllowedValue(JSContext *cx,
 JSBool js_cocos2dx_extension_ControlSlider_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlSlider_ControlSlider(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlStepper_class;
-extern JSObject *jsb_ControlStepper_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlStepper_class;
+extern JSObject *jsb_cocos2d_extension_ControlStepper_prototype;
 
 JSBool js_cocos2dx_extension_ControlStepper_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlStepper_finalize(JSContext *cx, JSObject *obj);
@@ -288,8 +256,8 @@ JSBool js_cocos2dx_extension_ControlStepper_setPlusLabel(JSContext *cx, uint32_t
 JSBool js_cocos2dx_extension_ControlStepper_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlStepper_ControlStepper(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ControlSwitch_class;
-extern JSObject *jsb_ControlSwitch_prototype;
+extern JSClass  *jsb_cocos2d_extension_ControlSwitch_class;
+extern JSObject *jsb_cocos2d_extension_ControlSwitch_prototype;
 
 JSBool js_cocos2dx_extension_ControlSwitch_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ControlSwitch_finalize(JSContext *cx, JSObject *obj);
@@ -304,8 +272,8 @@ JSBool js_cocos2dx_extension_ControlSwitch_locationFromTouch(JSContext *cx, uint
 JSBool js_cocos2dx_extension_ControlSwitch_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ControlSwitch_ControlSwitch(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_ScrollView_class;
-extern JSObject *jsb_ScrollView_prototype;
+extern JSClass  *jsb_cocos2d_extension_ScrollView_class;
+extern JSObject *jsb_cocos2d_extension_ScrollView_prototype;
 
 JSBool js_cocos2dx_extension_ScrollView_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_ScrollView_finalize(JSContext *cx, JSObject *obj);
@@ -315,7 +283,6 @@ JSBool js_cocos2dx_extension_ScrollView_isClippingToBounds(JSContext *cx, uint32
 JSBool js_cocos2dx_extension_ScrollView_setContainer(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_setContentOffsetInDuration(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_setZoomScaleInDuration(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ScrollView_addChild(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_setBounceable(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_getDirection(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_getContainer(JSContext *cx, uint32_t argc, jsval *vp);
@@ -329,7 +296,6 @@ JSBool js_cocos2dx_extension_ScrollView_setContentOffset(JSContext *cx, uint32_t
 JSBool js_cocos2dx_extension_ScrollView_isDragging(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_isTouchEnabled(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_isBounceable(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ScrollView_getContentSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_setTouchEnabled(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_getContentOffset(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_resume(JSContext *cx, uint32_t argc, jsval *vp);
@@ -337,7 +303,6 @@ JSBool js_cocos2dx_extension_ScrollView_setClippingToBounds(JSContext *cx, uint3
 JSBool js_cocos2dx_extension_ScrollView_setViewSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_getViewSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_maxContainerOffset(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_ScrollView_setContentSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_isTouchMoved(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_isNodeVisible(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_minContainerOffset(JSContext *cx, uint32_t argc, jsval *vp);
@@ -345,22 +310,21 @@ JSBool js_cocos2dx_extension_ScrollView_setZoomScale(JSContext *cx, uint32_t arg
 JSBool js_cocos2dx_extension_ScrollView_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_ScrollView_ScrollView(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_TableViewCell_class;
-extern JSObject *jsb_TableViewCell_prototype;
+extern JSClass  *jsb_cocos2d_extension_TableViewCell_class;
+extern JSObject *jsb_cocos2d_extension_TableViewCell_prototype;
 
 JSBool js_cocos2dx_extension_TableViewCell_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_TableViewCell_finalize(JSContext *cx, JSObject *obj);
 void js_register_cocos2dx_extension_TableViewCell(JSContext *cx, JSObject *global);
 void register_all_cocos2dx_extension(JSContext* cx, JSObject* obj);
 JSBool js_cocos2dx_extension_TableViewCell_reset(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_TableViewCell_setIdx(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_TableViewCell_setObjectID(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_TableViewCell_getObjectID(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_TableViewCell_getIdx(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_TableViewCell_setIdx(JSContext *cx, uint32_t argc, jsval *vp);
+JSBool js_cocos2dx_extension_TableViewCell_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_TableViewCell_TableViewCell(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_TableView_class;
-extern JSObject *jsb_TableView_prototype;
+extern JSClass  *jsb_cocos2d_extension_TableView_class;
+extern JSObject *jsb_cocos2d_extension_TableView_prototype;
 
 JSBool js_cocos2dx_extension_TableView_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_TableView_finalize(JSContext *cx, JSObject *obj);
@@ -380,14 +344,13 @@ JSBool js_cocos2dx_extension_TableView_cellAtIndex(JSContext *cx, uint32_t argc,
 JSBool js_cocos2dx_extension_TableView_dequeueCell(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_TableView_TableView(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_EditBox_class;
-extern JSObject *jsb_EditBox_prototype;
+extern JSClass  *jsb_cocos2d_extension_EditBox_class;
+extern JSObject *jsb_cocos2d_extension_EditBox_prototype;
 
 JSBool js_cocos2dx_extension_EditBox_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_EditBox_finalize(JSContext *cx, JSObject *obj);
 void js_register_cocos2dx_extension_EditBox(JSContext *cx, JSObject *global);
 void register_all_cocos2dx_extension(JSContext* cx, JSObject* obj);
-JSBool js_cocos2dx_extension_EditBox_setAnchorPoint(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_getText(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_setPlaceholderFontName(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_getPlaceHolder(JSContext *cx, uint32_t argc, jsval *vp);
@@ -400,20 +363,17 @@ JSBool js_cocos2dx_extension_EditBox_setPlaceholderFont(JSContext *cx, uint32_t 
 JSBool js_cocos2dx_extension_EditBox_setFontSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_initWithSizeAndBackgroundSprite(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_setPlaceHolder(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_EditBox_setPosition(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_setReturnType(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_setInputFlag(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_getMaxLength(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_setText(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_setMaxLength(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_EditBox_setContentSize(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_setFont(JSContext *cx, uint32_t argc, jsval *vp);
-JSBool js_cocos2dx_extension_EditBox_setVisible(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_create(JSContext *cx, uint32_t argc, jsval *vp);
 JSBool js_cocos2dx_extension_EditBox_EditBox(JSContext *cx, uint32_t argc, jsval *vp);
 
-extern JSClass  *jsb_AssetsManager_class;
-extern JSObject *jsb_AssetsManager_prototype;
+extern JSClass  *jsb_cocos2d_extension_AssetsManager_class;
+extern JSObject *jsb_cocos2d_extension_AssetsManager_prototype;
 
 JSBool js_cocos2dx_extension_AssetsManager_constructor(JSContext *cx, uint32_t argc, jsval *vp);
 void js_cocos2dx_extension_AssetsManager_finalize(JSContext *cx, JSObject *obj);

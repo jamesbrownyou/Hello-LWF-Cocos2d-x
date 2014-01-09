@@ -85,12 +85,13 @@ int ${signature_name}(lua_State* tolua_S)
                 #if $ret_type.is_enum
         int ret = (int)cobj->${func_name}($arg_list);
                 #else
-        ${ret_type} ret = cobj->${func_name}($arg_list);
+        ${ret_type.get_whole_name($generator)} ret = cobj->${func_name}($arg_list);
                 #end if
         ${ret_type.from_native({"generator": $generator,
                                 "in_value": "ret",
                                 "out_value": "ret",
-                                "ntype": $ret_type.name.replace("*", ""),
+                                "type_name": $ret_type.name.replace("*", ""),
+                                "ntype": $ret_type.get_whole_name($generator),
                                 "class_name": $class_name,
                                 "level": 2})};
         return 1;
@@ -105,9 +106,13 @@ int ${signature_name}(lua_State* tolua_S)
 #end if
     CCLOG("%s has wrong number of arguments: %d, was expecting %d \n", "${func_name}",argc, ${min_args});
     return 0;
+
 \#if COCOS2D_DEBUG >= 1
+#if not $is_constructor
     tolua_lerror:
+#end if
     tolua_error(tolua_S,"#ferror in function '${signature_name}'.",&tolua_err);
 \#endif
+
     return 0;
 }
